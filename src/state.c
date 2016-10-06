@@ -4,13 +4,12 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/time.h>
-#include <time.h>
 
 #include "email/headers.h"
 #include "config.h"
 #include "state.h"
 #include "ui.h"
+#include "util/time.h"
 #include "util/stringop.h"
 #include "util/list.h"
 #include "worker.h"
@@ -33,7 +32,8 @@ void set_status(struct account_state *account, enum account_status state,
 
 	account->status.text = buf;
 	account->status.status = state;
-	clock_gettime(CLOCK_MONOTONIC, &account->status.since);
+
+	get_nanoseconds(&account->status.since);	
 	request_rerender(); // TODO: just rerender the status bar
 }
 
