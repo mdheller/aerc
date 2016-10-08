@@ -7,7 +7,6 @@
 #include "colors.h"
 #include "util/stringop.h"
 #include "util/hashtable.h"
-#include "stdlib.h"
 
 hashtable_t *colors;
 
