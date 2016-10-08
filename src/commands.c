@@ -59,7 +59,7 @@ static void handle_message_seek(char *cmd, int mul, int argc, char **argv) {
 	struct aerc_mailbox *mbox = get_aerc_mailbox(account, account->selected);
 	int new = (int)account->ui.selected_message + amt;
 	if (new < 0) amt -= new;
-	if (new >= (int)mbox->messages->length) amt -= new - mbox->messages->length;
+	if (new >= (int)mbox->messages->length) amt -= new - mbox->messages->length + 1;
 	if (scroll) {
 		account->ui.list_offset += amt;
 	}
