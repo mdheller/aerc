@@ -1,7 +1,8 @@
 #define _POSIX_C_SOURCE 201112LL
 
 #include <ctype.h>
-#include <malloc.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <termbox.h>
 
