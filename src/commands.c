@@ -6,6 +6,7 @@
 
 #include "util/stringop.h"
 #include "commands.h"
+#include "config.h"
 #include "state.h"
 #include "log.h"
 #include "ui.h"
@@ -27,6 +28,10 @@ static void scroll_selected_into_view() {
 static void handle_quit(int argc, char **argv) {
 	// TODO: We may occasionally want to confirm the user's choice here
 	state->exit = true;
+}
+
+static void handle_reload() {
+	load_main_config(NULL);
 }
 
 static void handle_message_seek(char *cmd, int mul, int argc, char **argv) {
@@ -193,6 +198,7 @@ struct cmd_handler cmd_handlers[] = {
 	{ "previous-message", handle_previous_message },
 	{ "q", handle_quit },
 	{ "quit", handle_quit },
+	{ "reload", handle_reload },
 	{ "select-message", handle_select_message }
 };
 
