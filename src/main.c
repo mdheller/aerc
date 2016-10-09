@@ -18,6 +18,7 @@
 #include "worker.h"
 #include "imap/worker.h"
 #include "log.h"
+#include "render.h"
 #include "state.h"
 #include "ui.h"
 #include "util/list.h"
@@ -119,6 +120,7 @@ int main(int argc, char **argv) {
 		set_status(account, ACCOUNT_NOT_READY, "Connecting...");
 	}
 
+	state->rerender = PANEL_ALL;
 	rerender();
 
 	while (1) {

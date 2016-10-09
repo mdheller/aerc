@@ -74,8 +74,8 @@ int tb_printf(int x, int y, struct tb_cell *basis, const char *fmt, ...) {
 	return l;
 }
 
-void request_rerender() {
-	state->rerender = true;
+void request_rerender(enum render_panels panel) {
+	state->rerender |= panel;
 }
 
 void reset_fetches() {
@@ -134,43 +134,94 @@ void fetch_pending() {
 	}
 }
 
+static void rerender_account_tabs() {
+	struct geometry geo = {
+		.x = 0,
+		.y = 0,
+		.width = tb_width(),
+		.height = 1
+	};
+	state->panels.account_tabs = geo;
+	render_account_bar(geo);
+}
+
+static void rerender_sidebar() {
+	struct geometry geo = {
+		.x = 0,
+		.y = 1,
+		.width = config->ui.sidebar_width,
+		.height = tb_height() - 1
+	};
+	state->panels.sidebar = geo;
+	render_sidebar(geo);
+}
+
+static void rerender_message_list() {
+	struct geometry geo = {
+		.x = config->ui.sidebar_width,
+		.y = 1,
+		.width = tb_width() - config->ui.sidebar_width,
+		.height = tb_height() - 2
+	};
+	state->panels.message_list = geo;
+	render_items(geo);
+}
+
+static void rerender_status_bar() {
+	struct geometry geo = {
+		.x = config->ui.sidebar_width,
+		.y = tb_height() - 1,
+		.width = tb_width() - config->ui.sidebar_width,
+		.height = 1
+	};
+	state->panels.status_bar = geo;
+	render_status(geo);
+}
+
 void rerender() {
 	free_flat_list(loading_indicators);
 	loading_indicators = create_list();
 
-	tb_clear();
-	int width = tb_width(), height = tb_height();
-	int folder_width = config->ui.sidebar_width;
-
-	struct geometry client = { .x=0, .y=0, .width=width, .height=height };
-	struct geometry account_tabs = { .x=0, .y=0, .width=width, .height=1 };
-	struct geometry sidebar = { .x=0, .y=1, .width=folder_width, .height=height-1 };
-	struct geometry message_list = {
-		.x = folder_width,
-		.y = 1,
-		.width = width - folder_width,
-		.height = height - 2
+	int height = tb_height();
+	struct geometry client = {
+		.x = 0,
+		.y = 0,
+		.width = tb_width(),
+		.height = height
 	};
 	state->panels.client = client;
-	state->panels.account_tabs = account_tabs;
-	state->panels.sidebar = sidebar;
-	state->panels.message_list = message_list;
 
-	render_account_bar(account_tabs);
-	render_folder_list(sidebar);
+	if(state->rerender & PANEL_ALL) {
+		tb_clear();
+	}
+
+	if (state->rerender & (PANEL_ACCOUNT_TABS | PANEL_ALL)) {
+		rerender_account_tabs();
+	}
+
+	if (state->rerender & (PANEL_SIDEBAR | PANEL_ALL)) {
+		rerender_sidebar();
+	}
+
 	reset_fetches();
-	render_items(message_list);
+
+	if (state->rerender & (PANEL_MESSAGE_LIST | PANEL_ALL)) {
+		rerender_message_list();
+	}
 
 	fetch_pending();
-	struct geometry status = { .x=folder_width, .y=height-1, .width=width-folder_width, .height=1 };
-	render_status(status);
+
+	if (state->rerender & (PANEL_STATUS_BAR | PANEL_ALL)) {
+		rerender_status_bar();
+	}
 
 	if (state->command.text) {
-		tb_set_cursor(folder_width + strlen(state->command.text) + 1, height - 1);
+		tb_set_cursor(config->ui.sidebar_width + strlen(state->command.text) + 1, height - 1);
 	} else {
 		tb_set_cursor(TB_HIDE_CURSOR, TB_HIDE_CURSOR);
 	}
 	tb_present();
+	state->rerender = PANEL_NONE;
 }
 
 void rerender_item(size_t index) {
@@ -235,13 +286,13 @@ static void command_input(uint16_t ch) {
 	}
 	memcpy(state->command.text + len, &ch, size);
 	state->command.text[len + size] = '\0';
-	request_rerender();
+	request_rerender(PANEL_STATUS_BAR);
 }
 
 static void abort_command() {
 	free(state->command.text);
 	state->command.text = NULL;
-	request_rerender();
+	request_rerender(PANEL_STATUS_BAR);
 }
 
 static void command_backspace() {
@@ -250,7 +301,7 @@ static void command_backspace() {
 		return;
 	}
 	state->command.text[len - 1] = '\0';
-	request_rerender();
+	request_rerender(PANEL_STATUS_BAR);
 }
 
 static void command_delete_word() {
@@ -263,7 +314,7 @@ static void command_delete_word() {
 	while (cmd != state->command.text && !isspace(*cmd)) --cmd;
 	if (cmd != state->command.text) ++cmd;
 	*cmd = '\0';
-	request_rerender();
+	request_rerender(PANEL_STATUS_BAR);
 }
 
 
@@ -297,7 +348,7 @@ static struct tb_event *parse_input_command(const char *input, size_t *consumed)
 static void process_event(struct tb_event* event, aqueue_t *event_queue) {
 	switch (event->type) {
 	case TB_EVENT_RESIZE:
-		request_rerender();
+		request_rerender(PANEL_ALL);
 		break;
 	case TB_EVENT_KEY:
 		if (state->command.text) {
@@ -329,6 +380,7 @@ static void process_event(struct tb_event* event, aqueue_t *event_queue) {
 				}
 				break;
 			}
+			request_rerender(PANEL_STATUS_BAR);
 		} else {
 			if (event->ch == ':' && !event->mod) {
 				state->command.text = malloc(1024);
@@ -336,6 +388,7 @@ static void process_event(struct tb_event* event, aqueue_t *event_queue) {
 				state->command.length = 1024;
 				state->command.index = 0;
 				state->command.scroll = 0;
+				request_rerender(PANEL_STATUS_BAR);
 			} else {
 				const char* command = bind_handle_key_event(state->binds, event);
 				if (command) {
@@ -351,7 +404,6 @@ static void process_event(struct tb_event* event, aqueue_t *event_queue) {
 					}
 				}
 			}
-			request_rerender();
 		}
 		break;
 	}
@@ -397,8 +449,7 @@ bool ui_tick() {
 	}
 	aqueue_free(events);
 
-	if (state->rerender) {
-		state->rerender = false;
+	if (state->rerender != PANEL_NONE) {
 		rerender();
 	}
 

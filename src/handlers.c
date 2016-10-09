@@ -31,7 +31,7 @@ void handle_worker_select_done(struct account_state *account,
 	set_status(account, ACCOUNT_OKAY, "Connected.");
 	account->ui.list_offset = 0;
 	account->selected = strdup((char *)message->data);
-	request_rerender();
+	request_rerender(PANEL_MESSAGE_LIST);
 }
 
 void handle_worker_select_error(struct account_state *account,
@@ -64,7 +64,7 @@ void handle_worker_list_done(struct account_state *account,
 		worker_post_action(account->worker.pipe, WORKER_SELECT_MAILBOX,
 				NULL, strdup(wanted));
 	}
-	request_rerender();
+	request_rerender(PANEL_MESSAGE_LIST | PANEL_SIDEBAR);
 }
 
 void handle_worker_list_error(struct account_state *account,
@@ -99,12 +99,11 @@ void handle_worker_mailbox_updated(struct account_state *account,
 				new->messages = old->messages;
 			}
 			account->mailboxes->items[i] = new;
-			request_rerender();
 			break;
 		}
 	}
-
 	free_aerc_mailbox(old, false);
+	request_rerender(PANEL_MESSAGE_LIST | PANEL_SIDEBAR);
 }
 
 void handle_worker_message_updated(struct account_state *account,
@@ -133,5 +132,5 @@ void handle_worker_mailbox_deleted(struct account_state *account,
 		}
 	}
 	free_aerc_mailbox(mbox, true);
-	request_rerender();
+	request_rerender(PANEL_MESSAGE_LIST | PANEL_SIDEBAR);
 }

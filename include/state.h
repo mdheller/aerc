@@ -46,7 +46,7 @@ struct aerc_state {
 	size_t selected_account;
 	list_t *accounts;
 	bool exit;
-	bool rerender;
+	unsigned int rerender;
 	struct {
 		char *text;
 		size_t length, index, scroll;
@@ -57,6 +57,7 @@ struct aerc_state {
 		struct geometry sidebar;
 		struct geometry message_list;
 		struct geometry message_view;
+		struct geometry status_bar;
 	} panels;
 	struct bind *binds;
 };
