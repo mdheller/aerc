@@ -55,12 +55,13 @@ struct aerc_mailbox *get_aerc_mailbox(struct account_state *account,
 	return account->mailboxes->items[i];
 }
 
-void free_aerc_mailbox(struct aerc_mailbox *mbox, bool messages) {
+void free_aerc_mailbox(struct aerc_mailbox *mbox) {
 	if (!mbox) return;
 	free(mbox->name);
 	free_flat_list(mbox->flags);
-	if (messages) {
-		// TODO: Free messages
+	for (size_t i = 0; i < mbox->messages->length; ++i) {
+		struct aerc_message *msg = mbox->messages->items[i];
+		free_aerc_message(msg);
 	}
 	free(mbox);
 }

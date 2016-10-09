@@ -83,34 +83,31 @@ void handle_worker_connect_cert_check(struct account_state *account,
 
 void handle_worker_mailbox_updated(struct account_state *account,
 		struct worker_message *message) {
+	/*
+	 * This generally happens when a mailbox is first being initialized, and
+	 * when new messages arrive in it.
+	 */
 	struct aerc_mailbox *new = message->data;
 	struct aerc_mailbox *old = NULL;
 
-	worker_log(L_DEBUG, "Mailbox updated");
+	worker_log(L_DEBUG, "Updating mailbox on UI thread");
 	for (size_t i = 0; i < account->mailboxes->length; ++i) {
 		old = account->mailboxes->items[i];
 		if (strcmp(old->name, new->name) == 0) {
-			if (old->messages && old->messages->length) {
-				for (size_t j = 0; j < new->messages->length; ++j) {
-					struct aerc_message *m = new->messages->items[j];
-					free_aerc_message(m);
-				}
-				list_free(new->messages);
-				new->messages = old->messages;
-			}
 			account->mailboxes->items[i] = new;
 			break;
 		}
 	}
-	free_aerc_mailbox(old, false);
+	free_aerc_mailbox(old);
 	request_rerender(PANEL_MESSAGE_LIST | PANEL_SIDEBAR);
 }
 
 void handle_worker_message_updated(struct account_state *account,
 		struct worker_message *message) {
-	worker_log(L_DEBUG, "Updated message on main thread");
-	struct aerc_message *new = message->data;
-	struct aerc_mailbox *mbox = get_aerc_mailbox(account, account->selected);
+	worker_log(L_DEBUG, "Updated message on UI thread");
+	struct aerc_message_update *update = message->data;
+	struct aerc_message *new = update->message;
+	struct aerc_mailbox *mbox = get_aerc_mailbox(account, update->mailbox);
 	for (size_t i = 0; i < mbox->messages->length; ++i) {
 		struct aerc_message *old = mbox->messages->items[i];
 		if (old->index == new->index) {
@@ -120,17 +117,18 @@ void handle_worker_message_updated(struct account_state *account,
 			rerender_item(i);
 		}
 	}
+	free(update->mailbox);
 }
 
 void handle_worker_mailbox_deleted(struct account_state *account,
 		struct worker_message *message) {
-	worker_log(L_DEBUG, "Deleting mailbox on main thread");
+	worker_log(L_DEBUG, "Deleting mailbox on UI thread");
 	struct aerc_mailbox *mbox = get_aerc_mailbox(account, (const char *)message->data);
 	for (size_t i = 0; i < account->mailboxes->length; ++i) {
 		if (account->mailboxes->items[i] == mbox) {
 			list_del(account->mailboxes, i);
 		}
 	}
-	free_aerc_mailbox(mbox, true);
+	free_aerc_mailbox(mbox);
 	request_rerender(PANEL_MESSAGE_LIST | PANEL_SIDEBAR);
 }

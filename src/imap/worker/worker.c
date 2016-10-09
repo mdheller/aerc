@@ -106,7 +106,10 @@ static void update_message(struct imap_connection *imap,
 		struct mailbox_message *msg) {
 	struct aerc_message *aerc_msg = serialize_message(msg);
 	struct worker_pipe *pipe = imap->data;
-	worker_post_message(pipe, WORKER_MESSAGE_UPDATED, NULL, aerc_msg);
+	struct aerc_message_update *update = calloc(1, sizeof(struct aerc_message_update));
+	update->message = aerc_msg;
+	update->mailbox = strdup(imap->selected);
+	worker_post_message(pipe, WORKER_MESSAGE_UPDATED, NULL, update);
 }
 
 static void delete_mailbox(struct imap_connection *imap, const char *mailbox) {
