@@ -19,6 +19,7 @@
 #include "urlparse.h"
 #include "util/hashtable.h"
 #include "util/list.h"
+#include "util/time.h"
 #include "util/stringop.h"
 
 #define BUFFER_SIZE 1024
@@ -93,6 +94,20 @@ int handle_line(struct imap_connection *imap, imap_arg_t *arg) {
 void imap_send(struct imap_connection *imap, imap_callback_t callback,
 		void *data, const char *fmt, ...) {
 	/*
+	 * If we're in IDLE mode, we need to leave it before we can do anything.
+	 */
+	if (imap->mode == RECV_IDLE) {
+		worker_log(L_DEBUG, "Leaving IDLE");
+		imap->mode = RECV_LINE;
+		char *done = "DONE\r\n";
+		ab_send(imap->socket, done, strlen(done));
+		if (raw) {
+			fwrite(done, 1, strlen(done), raw);
+			fflush(raw);
+		}
+	}
+
+	/*
 	 * First, we determine the length of the formatted string.
 	 */
 	va_list args;
@@ -156,10 +171,11 @@ int imap_receive(struct imap_connection *imap) {
 	 */
 	poll(imap->poll, 1, 0);
 	if (imap->poll[0].revents & POLLIN) {
+		get_nanoseconds(&imap->last_network);
 		if (imap->mode == RECV_WAIT) {
 			/* The mode may be RECV_WAIT if we are waiting on the user to verify
 			 * the SSL certificate, for example. */
-		} else if (imap->mode == RECV_LINE) {
+		} else {
 			/*
 			 * We are receiving data a line at a time. IMAP lines are delimited
 			 * with CRLF, so we attempt to receive data until we've filled our
@@ -219,6 +235,20 @@ int imap_receive(struct imap_connection *imap) {
 				}
 			}
 			return amt;
+		}
+	} else {
+		/*
+		 * Nothing being received, we wait 3 seconds and then start IDLE
+		 */
+		if (imap->logged_in && imap->cap->idle && imap->mode != RECV_IDLE) {
+			struct timespec ts;
+			get_nanoseconds(&ts);
+			if (ts.tv_sec - imap->last_network.tv_sec > 3) {
+				worker_log(L_DEBUG, "Entering IDLE mode");
+				imap_send(imap, NULL, NULL, "IDLE");
+				imap->mode = RECV_IDLE;
+				get_nanoseconds(&imap->idle_start);
+			}
 		}
 	}
 	return 0;

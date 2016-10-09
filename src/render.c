@@ -225,9 +225,10 @@ void render_items(struct geometry geo) {
 	for (int i = mailbox->messages->length - account->ui.list_offset - 1;
 			i >= 0 && geo.y <= geo.height;
 			--i, ++geo.y) {
-		worker_log(L_DEBUG, "Rendering message %d of %zd at %d (offs %zd)",
-				i, mailbox->messages->length, geo.y, account->ui.list_offset);
 		struct aerc_message *message = mailbox->messages->items[i];
+		const char *subject = get_message_header(message, "Subject");
+		worker_log(L_DEBUG, "Rendering message %d of %zd at %d (offs %zd) [%s]",
+				i, mailbox->messages->length, geo.y, account->ui.list_offset, subject);
 		render_item(geo, message, selected == i);
 	}
 }

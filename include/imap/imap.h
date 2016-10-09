@@ -10,6 +10,7 @@
 #include "urlparse.h"
 #include "util/hashtable.h"
 #include "util/list.h"
+#include "util/time.h"
 
 // TODO: Refactor these into the internal header:
 // - recv_mode
@@ -32,7 +33,8 @@ enum imap_status {
 
 enum recv_mode {
 	RECV_WAIT,
-	RECV_LINE
+	RECV_LINE,
+	RECV_IDLE,
 };
 
 struct imap_connection;
@@ -72,6 +74,8 @@ struct imap_connection {
 
 	void *data;
 	bool logged_in;
+	struct timespec idle_start;
+	struct timespec last_network;
 	absocket_t *socket;
 	enum recv_mode mode;
 	char *line;
