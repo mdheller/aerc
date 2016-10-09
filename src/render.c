@@ -60,7 +60,7 @@ static int compare_mailboxes(const void *_a, const void *_b) {
 	return strcmp(a->name, b->name);
 }
 
-void render_folder_list(struct geometry geo) {
+void render_sidebar(struct geometry geo) {
 	struct account_state *account =
 		state->accounts->items[state->selected_account];
 

@@ -18,10 +18,10 @@ static void scroll_selected_into_view() {
 	int height = state->panels.message_list.height - 1;
 	if (relative >= height) {
 		account->ui.list_offset += relative - height;
-		request_rerender();
+		request_rerender(PANEL_MESSAGE_LIST);
 	} else if (relative < 0) {
 		account->ui.list_offset += relative;
-		request_rerender();
+		request_rerender(PANEL_MESSAGE_LIST);
 	}
 }
 
@@ -70,7 +70,7 @@ static void handle_message_seek(char *cmd, int mul, int argc, char **argv) {
 	}
 	account->ui.selected_message += amt;
 	scroll_selected_into_view();
-	request_rerender();
+	request_rerender(PANEL_MESSAGE_LIST);
 }
 
 static void handle_next_message(int argc, char **argv) {
@@ -104,19 +104,19 @@ static void handle_select_message(int argc, char **argv) {
 	}
 	account->ui.selected_message = requested;
 	scroll_selected_into_view();
-	request_rerender();
+	request_rerender(PANEL_MESSAGE_LIST);
 }
 
 static void handle_next_account(int argc, char **argv) {
 	state->selected_account++;
 	state->selected_account %= state->accounts->length;
-	request_rerender();
+	request_rerender(PANEL_ALL);
 }
 
 static void handle_previous_account(int argc, char **argv) {
 	state->selected_account--;
 	state->selected_account %= state->accounts->length;
-	request_rerender();
+	request_rerender(PANEL_ALL);
 }
 
 static void handle_next_folder(int argc, char **argv) {
@@ -138,6 +138,7 @@ static void handle_next_folder(int argc, char **argv) {
 	struct aerc_mailbox *next = account->mailboxes->items[i];
 	worker_post_action(account->worker.pipe, WORKER_SELECT_MAILBOX,
 			NULL, strdup(next->name));
+	request_rerender(PANEL_SIDEBAR | PANEL_MESSAGE_LIST);
 }
 
 static void handle_previous_folder(int argc, char **argv) {
@@ -160,6 +161,7 @@ static void handle_previous_folder(int argc, char **argv) {
 	struct aerc_mailbox *next = account->mailboxes->items[i];
 	worker_post_action(account->worker.pipe, WORKER_SELECT_MAILBOX,
 			NULL, strdup(next->name));
+	request_rerender(PANEL_SIDEBAR | PANEL_MESSAGE_LIST);
 }
 
 static void handle_cd(int argc, char **argv) {
@@ -168,6 +170,7 @@ static void handle_cd(int argc, char **argv) {
 	char *joined = join_args(argv, argc);
 	worker_post_action(account->worker.pipe, WORKER_SELECT_MAILBOX,
 			NULL, joined);
+	request_rerender(PANEL_SIDEBAR | PANEL_MESSAGE_LIST);
 }
 
 static void handle_delete_mailbox(int argc, char **argv) {
@@ -178,6 +181,7 @@ static void handle_delete_mailbox(int argc, char **argv) {
 	worker_post_action(account->worker.pipe, WORKER_DELETE_MAILBOX,
 			NULL, strdup(joined));
 	free(joined);
+	request_rerender(PANEL_SIDEBAR | PANEL_MESSAGE_LIST);
 }
 
 struct cmd_handler {

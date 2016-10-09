@@ -33,8 +33,8 @@ void set_status(struct account_state *account, enum account_status state,
 	account->status.text = buf;
 	account->status.status = state;
 
-	get_nanoseconds(&account->status.since);	
-	request_rerender(); // TODO: just rerender the status bar
+	get_nanoseconds(&account->status.since);
+	request_rerender(PANEL_STATUS_BAR);
 }
 
 static int get_mbox_compare(const void *_mbox, const void *_name) {
