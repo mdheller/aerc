@@ -240,11 +240,20 @@ int imap_receive(struct imap_connection *imap) {
 		/*
 		 * Nothing being received, we wait 3 seconds and then start IDLE
 		 */
+		struct timespec ts;
+		get_nanoseconds(&ts);
 		if (imap->logged_in && imap->cap->idle && imap->mode != RECV_IDLE) {
-			struct timespec ts;
-			get_nanoseconds(&ts);
 			if (ts.tv_sec - imap->last_network.tv_sec > 3) {
 				worker_log(L_DEBUG, "Entering IDLE mode");
+				imap_send(imap, NULL, NULL, "IDLE");
+				imap->mode = RECV_IDLE;
+				get_nanoseconds(&imap->idle_start);
+			}
+		}
+		if (imap->mode == RECV_IDLE) {
+			if (ts.tv_sec - imap->idle_start.tv_sec > 20 * 60) {
+				// TODO: Customize the idle refresh timeout
+				worker_log(L_DEBUG, "Refreshing IDLE mode");
 				imap_send(imap, NULL, NULL, "IDLE");
 				imap->mode = RECV_IDLE;
 				get_nanoseconds(&imap->idle_start);
