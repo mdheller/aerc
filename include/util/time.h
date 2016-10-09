@@ -1,5 +1,5 @@
-#ifndef _TIME_H
-#define _TIME_H
+#ifndef _UTIL_TIME_H
+#define _UTIL_TIME_H
 
 #include "state.h"
 

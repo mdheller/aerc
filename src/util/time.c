@@ -1,5 +1,7 @@
+#define _POSIX_C_SOURCE 199309L
 #include "util/time.h"
 
+#include <time.h>
 #ifdef __MACH__
 #include <mach/clock.h>
 #include <mach/mach.h>
