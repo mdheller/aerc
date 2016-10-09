@@ -34,21 +34,19 @@ void colors_init() {
 	set_color("message-list-unselected-unread", "default:*default");
 }
 
-// default color names have to be decremeted one to
-// work in 256-color mode in termbox
 const struct {
 	const char *name;
 	uint16_t color;
 } color_names[] = {
 	{ "default", TB_DEFAULT },
-	{ "black", TB_BLACK - 1 },
-	{ "red", TB_RED - 1 },
-	{ "green", TB_GREEN - 1 },
-	{ "yellow", TB_YELLOW - 1 },
-	{ "blue", TB_BLUE - 1 },
-	{ "magenta", TB_MAGENTA - 1 },
-	{ "cyan", TB_CYAN - 1 },
-	{ "white", TB_WHITE - 1 }
+	{ "red",     1 },
+	{ "green",   2 },
+	{ "yellow",  3 },
+	{ "blue",    4 },
+	{ "magenta", 5 },
+	{ "cyan",    6 },
+	{ "white",   7 },
+	{ "black",   16 }
 };
 
 static uint16_t match_color(const char *value) {
