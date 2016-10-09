@@ -199,11 +199,6 @@ void render_item(struct geometry geo, struct aerc_message *message, bool selecte
 				message->internal_date);
 		const char *subject = get_message_header(message, "Subject");
 		int l = tb_printf(geo.x, geo.y, &cell, "%s %s", date, subject);
-		if (selected) {
-			get_color("message-list-selected", &cell);
-		} else {
-			get_color("message-list-unselected", &cell);
-		}
 		geo.x += l;
 		geo.width -= 1;
 		geo.height = 1;
