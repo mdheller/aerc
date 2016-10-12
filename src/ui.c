@@ -345,6 +345,22 @@ static struct tb_event *parse_input_command(const char *input, size_t *consumed)
 	return e;
 }
 
+static void pass_event_to_command(struct tb_event *event, aqueue_t *event_queue) {
+	const char* command = bind_handle_key_event(state->binds, event);
+	if (command) {
+		size_t consumed = 0;
+		struct tb_event *new_event = NULL;
+
+		while (1) {
+			new_event = parse_input_command(command + consumed, &consumed);
+			if (!new_event) {
+				break;
+			}
+			aqueue_enqueue(event_queue, new_event);
+		}
+	}
+}
+
 static void process_event(struct tb_event* event, aqueue_t *event_queue) {
 	switch (event->type) {
 	case TB_EVENT_RESIZE:
@@ -390,21 +406,16 @@ static void process_event(struct tb_event* event, aqueue_t *event_queue) {
 				state->command.scroll = 0;
 				request_rerender(PANEL_STATUS_BAR);
 			} else {
-				const char* command = bind_handle_key_event(state->binds, event);
-				if (command) {
-					size_t consumed = 0;
-					struct tb_event *new_event = NULL;
-
-					while (1) {
-						new_event = parse_input_command(command + consumed, &consumed);
-						if (!new_event) {
-							break;
-						}
-						aqueue_enqueue(event_queue, new_event);
-					}
-				}
+				pass_event_to_command(event, event_queue);
 			}
 		}
+		break;
+	case TB_EVENT_MOUSE:
+		if (event->key == TB_KEY_MOUSE_WHEEL_UP
+				|| event->key == TB_KEY_MOUSE_WHEEL_DOWN) {
+			pass_event_to_command(event, event_queue);
+		}
+		// TODO: Clickables
 		break;
 	}
 }

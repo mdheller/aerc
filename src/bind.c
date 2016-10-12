@@ -44,6 +44,8 @@ static const char *valid_special_stubs[] = {
 	"Tab",
 	"Insert",
 	"Delete",
+	"WheelUp",
+	"WheelDown",
 };
 
 static const struct {
@@ -76,6 +78,8 @@ static const struct {
 	{"Tab", TB_KEY_TAB},
 	{"Insert", TB_KEY_INSERT},
 	{"Delete", TB_KEY_DELETE},
+	{"WheelUp", TB_KEY_MOUSE_WHEEL_UP},
+	{"WheelDown", TB_KEY_MOUSE_WHEEL_DOWN},
 	{"Ctrl+~", TB_KEY_CTRL_TILDE},
 	{"Ctrl+a", TB_KEY_CTRL_A},
 	{"Ctrl+b", TB_KEY_CTRL_B},
@@ -120,11 +124,13 @@ void add_default_bindings(struct bind *binds) {
 	bind_add(binds, "Down", ":next-message<Enter>");
 	bind_add(binds, "Ctrl+d", ":next-message --scroll 50%<Enter>");
 	bind_add(binds, "PageDown", ":next-message --scroll 100%<Enter>");
+	bind_add(binds, "WheelDown", ":next-message --scroll 1<Enter>");
 
 	bind_add(binds, "k", ":previous-message<Enter>");
 	bind_add(binds, "Up", ":previous-message<Enter>");
 	bind_add(binds, "Ctrl+u", ":previous-message --scroll 50%<Enter>");
 	bind_add(binds, "PageUp", ":previous-message --scroll 100%<Enter>");
+	bind_add(binds, "WheelUp", ":previous-message --scroll 1<Enter>");
 
 	bind_add(binds, "l", ":next-mailbox<Enter>");
 	bind_add(binds, "Right", ":next-mailbox<Enter>");
@@ -133,6 +139,8 @@ void add_default_bindings(struct bind *binds) {
 	bind_add(binds, "K", ":previous-folder<Enter>");
 	bind_add(binds, "g", ":select-message 0<Enter>");
 	bind_add(binds, "G", ":select-message -1<Enter>");
+
+	bind_add(binds, "c", ":cd ");
 }
 
 static void init_bind_node(struct bind_node *bn) {
