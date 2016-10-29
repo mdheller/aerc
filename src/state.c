@@ -86,6 +86,9 @@ const char *get_message_header(struct aerc_message *msg, char *key) {
 	}
 	for (size_t i = 0; i < msg->headers->length; ++i) {
 		struct email_header *header = msg->headers->items[i];
+		if (!header->key) {
+			break;
+		}
 		if (strcmp(header->key, key) == 0) {
 			return header->value;
 		}
