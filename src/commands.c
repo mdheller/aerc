@@ -62,6 +62,9 @@ static void handle_message_seek(char *cmd, int mul, int argc, char **argv) {
 	}
 	amt *= mul;
 	struct aerc_mailbox *mbox = get_aerc_mailbox(account, account->selected);
+	if (!mbox) {
+		return;
+	}
 	int new = (int)account->ui.selected_message + amt;
 	if (new < 0) amt -= new;
 	if (new >= (int)mbox->messages->length) amt -= new - mbox->messages->length + 1;
@@ -95,6 +98,9 @@ static void handle_select_message(int argc, char **argv) {
 		return;
 	}
 	struct aerc_mailbox *mbox = get_aerc_mailbox(account, account->selected);
+	if (!mbox) {
+		return;
+	}
 	if (requested < 0) {
 		requested = mbox->messages->length + requested;
 	}
@@ -126,6 +132,9 @@ static void handle_next_folder(int argc, char **argv) {
 	worker_log(L_DEBUG, "Current: %s", account->selected);
 	for (i = 0; i < (int)account->mailboxes->length; ++i) {
 		struct aerc_mailbox *mbox = account->mailboxes->items[i];
+		if (!mbox) {
+			return;
+		}
 		if (!strcmp(mbox->name, account->selected)) {
 			break;
 		}
@@ -147,6 +156,9 @@ static void handle_previous_folder(int argc, char **argv) {
 	int i = -1;
 	for (i = 0; i < (int)account->mailboxes->length; ++i) {
 		struct aerc_mailbox *mbox = account->mailboxes->items[i];
+		if (!mbox) {
+			return;
+		}
 		if (!strcmp(mbox->name, account->selected)) {
 			break;
 		}
