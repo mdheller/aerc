@@ -39,7 +39,7 @@ Run these commands:
 ```shell
 mkdir build
 cd build
-cmake -DCMAKE_BUILD_TYPE=Release ..
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_SYSCONFDIR=/etc ..
 make
 sudo make install
 ```
