@@ -31,6 +31,7 @@ struct aerc_config {
 
 extern struct aerc_config *config;
 
+int handle_config_option(void *_config, const char *section, const char *key, const char *value);
 bool load_main_config(const char *file);
 bool load_accounts_config();
 void free_config(struct aerc_config *config);

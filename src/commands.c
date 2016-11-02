@@ -196,6 +196,28 @@ static void handle_delete_mailbox(int argc, char **argv) {
 	request_rerender(PANEL_SIDEBAR | PANEL_MESSAGE_LIST);
 }
 
+static void handle_set(int argc, char **argv) {
+	struct account_state *account =
+		state->accounts->items[state->selected_account];
+	if (argc < 2) {
+		set_status(account, ACCOUNT_ERROR, "Usage: set [section].[key] [value]");
+		return;
+	}
+	char *seckey = argv[0];
+	char *dot = strchr(seckey, '.');
+	if (!dot) {
+		set_status(account, ACCOUNT_ERROR, "Usage: set [section].[key] [value]");
+		return;
+	}
+	*dot = '\0';
+	char *section = seckey;
+	char *key = dot + 1;
+	char *value = join_args(argv + 1, argc - 1);
+	handle_config_option(config, section, key, value);
+	request_rerender(PANEL_ALL);
+	set_status(account, ACCOUNT_OKAY, "Connected.");
+}
+
 struct cmd_handler {
 	char *command;
 	void (*handler)(int argc, char **argv);
@@ -215,7 +237,8 @@ struct cmd_handler cmd_handlers[] = {
 	{ "q", handle_quit },
 	{ "quit", handle_quit },
 	{ "reload", handle_reload },
-	{ "select-message", handle_select_message }
+	{ "select-message", handle_select_message },
+	{ "set", handle_set },
 };
 
 static int handler_compare(const void *_a, const void *_b) {

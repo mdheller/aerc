@@ -83,7 +83,7 @@ static int handle_loading_indicator(struct aerc_config *config, const char *valu
 	return 1;
 }
 
-static int handle_config_option(void *_config, const char *section,
+int handle_config_option(void *_config, const char *section,
 		const char *key, const char *value) {
 	struct aerc_config *config = _config;
 	worker_log(L_DEBUG, "Handling [%s]%s=%s", section, key, value);
