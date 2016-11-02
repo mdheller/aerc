@@ -216,6 +216,7 @@ static void handle_set(int argc, char **argv) {
 	handle_config_option(config, section, key, value);
 	request_rerender(PANEL_ALL);
 	set_status(account, ACCOUNT_OKAY, "Connected.");
+	free(value);
 }
 
 struct cmd_handler {
