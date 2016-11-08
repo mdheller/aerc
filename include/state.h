@@ -50,6 +50,7 @@ struct aerc_state {
 	struct {
 		char *text;
 		size_t length, index, scroll;
+		list_t *cmd_history;
 	} command;
 	struct {
 		struct geometry client;
