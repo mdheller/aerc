@@ -363,6 +363,7 @@ static void pass_event_to_command(struct tb_event *event, aqueue_t *event_queue)
 }
 
 static void process_event(struct tb_event* event, aqueue_t *event_queue) {
+	static size_t cmd_index = 0;
 	switch (event->type) {
 	case TB_EVENT_RESIZE:
 		request_rerender(PANEL_ALL);
