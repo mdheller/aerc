@@ -32,6 +32,7 @@ void init_ui() {
 	tb_init();
 	tb_select_input_mode(TB_INPUT_ESC | TB_INPUT_MOUSE);
 	tb_select_output_mode(TB_OUTPUT_256);
+	state->command.cmd_history = create_list();
 }
 
 void teardown_ui() {
@@ -386,7 +387,23 @@ static void process_event(struct tb_event* event, aqueue_t *event_queue) {
 			case TB_KEY_TAB:
 				command_input('\t');
 				break;
+			case TB_KEY_ARROW_UP:
+				free(state->command.text);
+				if (state->command.cmd_history->length > cmd_index) {
+					state->command.text = strdup(state->command.cmd_history->items[state->command.cmd_history->length - 1 - cmd_index++]);
+				}
+				break;
+			case TB_KEY_ARROW_DOWN:
+				free(state->command.text);
+				if (cmd_index > 0) {
+					state->command.text = strdup(state->command.cmd_history->items[--cmd_index]);
+				} else {
+					state->command.text[0] = '\0';
+				}
+				break;
 			case TB_KEY_ENTER:
+				cmd_index = 0;
+				list_add(state->command.cmd_history, strdup(state->command.text));
 				handle_command(state->command.text);
 				abort_command();
 				break;
