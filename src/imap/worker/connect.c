@@ -59,7 +59,12 @@ void handle_worker_connect(struct worker_pipe *pipe, struct worker_message *mess
 	if (!uri->port) {
 		uri->port = strdup(ssl ? "993" : "143");
 	}
-	worker_log(L_DEBUG, "Connecting to IMAP server");
+	worker_log(L_DEBUG, "Connecting to IMAP server:");
+	worker_log(L_DEBUG, "Protocol: %s%s", uri->scheme, ssl ? " (ssl)" : "");
+	worker_log(L_DEBUG, "Username: %s", uri->username);
+	worker_log(L_DEBUG, "Password: [hidden, %zd characters]", strlen(uri->password));
+	worker_log(L_DEBUG, "Hostname: %s", uri->hostname);
+	worker_log(L_DEBUG, "Port: %s", uri->port);
 	/*
 	 * Connect!
 	 */
