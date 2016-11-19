@@ -47,9 +47,6 @@ struct message_handler message_handlers[] = {
 };
 
 void handle_worker_message(struct account_state *account, struct worker_message *msg) {
-	/*
-	 * Handle incoming messages from a worker.
-	 */
 	for (size_t i = 0;
 			i < sizeof(message_handlers) / sizeof(struct message_handler);
 			++i) {

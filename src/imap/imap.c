@@ -29,17 +29,11 @@ hashtable_t *internal_handlers = NULL;
 
 FILE *raw;
 
-/*
- * The internal IMAP command handler type.
- */
 typedef void (*imap_handler_t)(struct imap_connection *imap,
 	const char *token, const char *cmd, imap_arg_t *args);
 
 struct imap_pending_callback *make_callback(imap_callback_t callback, void *data) {
-	/* 
-	 * We need to keep the data passed in by the user around so we can
-	 * eventually pass it back to them when we invoke their callback.
-	 */
+	// This just holds the user reference along with the callback pointer
 	struct imap_pending_callback *cb = malloc(sizeof(struct imap_pending_callback));
 	cb->callback = callback;
 	cb->data = data;
@@ -47,10 +41,9 @@ struct imap_pending_callback *make_callback(imap_callback_t callback, void *data
 }
 
 int handle_line(struct imap_connection *imap, imap_arg_t *arg) {
-	assert(arg && arg->next); // At least a tag and command
+	assert(arg && arg->next); // We expect at least a tag and command
 	/*
-	 * We grab a handler based on the IMAP command in question. IMAP commands
-	 * are formatted like this:
+	 * IMAP commands are formatted like this:
 	 *
 	 * [tag] [command] [...]
 	 *
@@ -79,11 +72,6 @@ int handle_line(struct imap_connection *imap, imap_arg_t *arg) {
 	assert(arg->next->type == IMAP_ATOM);
 	imap_handler_t handler = hashtable_get(internal_handlers, arg->next->str);
 	if (handler) {
-		/*
-		 * Here we join the arguments - the [...] from above, then parse this as
-		 * an IMAP argument list (which has special syntax and semantic
-		 * meaning). Then we invoke our internal handler for this IMAP command.
-		 */
 		handler(imap, arg->str, arg->next->str, arg->next->next);
 	} else {
 		worker_log(L_DEBUG, "Recieved unknown IMAP command: %s", arg->str);
@@ -93,9 +81,6 @@ int handle_line(struct imap_connection *imap, imap_arg_t *arg) {
 
 void imap_send(struct imap_connection *imap, imap_callback_t callback,
 		void *data, const char *fmt, ...) {
-	/*
-	 * If we're in IDLE mode, we need to leave it before we can do anything.
-	 */
 	if (imap->mode == RECV_IDLE) {
 		worker_log(L_DEBUG, "Leaving IDLE");
 		imap->mode = RECV_LINE;
@@ -107,56 +92,37 @@ void imap_send(struct imap_connection *imap, imap_callback_t callback,
 		}
 	}
 
-	/*
-	 * First, we determine the length of the formatted string.
-	 */
 	va_list args;
 	va_start(args, fmt);
 	int len = vsnprintf(NULL, 0, fmt, args);
 	va_end(args);
 
-	/*
-	 * Then we allocate a buffer that length, and do the actual printf into it.
-	 */
 	char *buf = malloc(len + 1);
 	va_start(args, fmt);
 	vsnprintf(buf, len + 1, fmt, args);
 	va_end(args);
 
-	/*
-	 * We now have the command they want to send, but we need to add a tag and a
-	 * CRLF. By convention our tags are aXXXX, where XXXX is a number that
-	 * increments each time this function is called. Here we find the length,
-	 * allocate a buffer, and printf into that buffer again.
-	 */
 	len = snprintf(NULL, 0, "a%04d", imap->next_tag);
 	char *tag = malloc(len + 1);
 	snprintf(tag, len + 1, "a%04d", imap->next_tag++);
-	/*
-	 * Once we've printed a tag, we have all of the pieces necessary to form the
-	 * full IMAP command. We do this here - measure, allocate, print.
-	 */
+
 	len = snprintf(NULL, 0, "%s %s\r\n", tag, buf);
 	char *cmd = malloc(len + 1);
 	snprintf(cmd, len + 1, "%s %s\r\n", tag, buf);
-	/*
-	 * We can now send the completed IMAP command to the server. We also take a
-	 * moment to add the user-provided callback to the pending callbacks
-	 * hashtable, keyed on the tag. The server will reference this tag when it
-	 * sends us the response, and we can pull that out of the hashtable later to
-	 * invoke the callback.
-	 */
+
 	ab_send(imap->socket, cmd, len);
 	if (raw) {
 		fwrite(cmd, 1, len, raw);
 		fflush(raw);
 	}
 	hashtable_set(imap->pending, tag, make_callback(callback, data));
-	if (strncmp("LOGIN ", buf, 6) != 0) {
-		worker_log(L_DEBUG, "-> %s %s", tag, buf);
-	} else {
-		/* Obsfucate the debug logging if sending a sensitive command */
+
+	if (strncmp("LOGIN ", buf, 6) == 0) {
 		worker_log(L_DEBUG, "-> %s LOGIN *****", tag);
+	} else if (strncmp("AUTHENTICATE ", buf, 13) == 0) {
+		worker_log(L_DEBUG, "-> %s AUTHENTICATE *****", tag);
+	} else {
+		worker_log(L_DEBUG, "-> %s %s", tag, buf);
 	}
 
 	free(cmd);
@@ -165,10 +131,6 @@ void imap_send(struct imap_connection *imap, imap_callback_t callback,
 }
 
 int imap_receive(struct imap_connection *imap) {
-	/*
-	 * This function will poll(3) for data waiting on the socket, then attempt
-	 * to receive it per the various modes the connection may be in.
-	 */
 	poll(imap->poll, 1, 0);
 	if (imap->poll[0].revents & POLLIN) {
 		get_nanoseconds(&imap->last_network);
@@ -176,42 +138,21 @@ int imap_receive(struct imap_connection *imap) {
 			/* The mode may be RECV_WAIT if we are waiting on the user to verify
 			 * the SSL certificate, for example. */
 		} else {
-			/*
-			 * We are receiving data a line at a time. IMAP lines are delimited
-			 * with CRLF, so we attempt to receive data until we've filled our
-			 * buffer with a full line.
-			 */
 			ssize_t amt = ab_recv(imap->socket, imap->line + imap->line_index,
 					imap->line_size - imap->line_index);
 			imap->line_index += amt;
 			if (imap->line_index == imap->line_size) {
-				/*
-				 * We have filled our entire line buffer. Reallocate it a bit
-				 * bigger, set the new space to NULL, and we'll try again
-				 * shortly.
-				 */
 				imap->line = realloc(imap->line,
 						imap->line_size + BUFFER_SIZE + 1);
 				memset(imap->line + imap->line_index + 1, 0,
 						(imap->line_size - imap->line_index + 1));
 				imap->line_size = imap->line_size + BUFFER_SIZE;
 			}
-			/*
-			 * Here we select lines from the buffer and pass them along to
-			 * handle_line.
-			 */
 			int remaining = 0;
 			while (!remaining) {
-				/*
-				 * Attempt to parse what we've got:
-				 */
 				imap_arg_t *arg = calloc(1, sizeof(imap_arg_t));
 				int len = imap_parse_args(imap->line, arg, &remaining);
-				if (remaining == 0) {
-					/*
-					 * If we got a complete IMAP command, pass it along to the
-					 * handlers:
-					 */
+				if (remaining == 0) { // Parsed a complete command
 					char c = imap->line[len];
 					imap->line[len] = '\0';
 					worker_log(L_DEBUG, "Handling %s", imap->line);
@@ -224,10 +165,6 @@ int imap_receive(struct imap_connection *imap) {
 					handle_line(imap, arg);
 				}
 				imap_arg_free(arg);
-				/*
-				 * If we got a full command, shift the end of the buffer up to
-				 * the top and loop.
-				 */
 				if (len > 0 && remaining == 0) {
 					memmove(imap->line, imap->line + len, imap->line_size - len);
 					imap->line_index -= len;
@@ -237,9 +174,7 @@ int imap_receive(struct imap_connection *imap) {
 			return amt;
 		}
 	} else {
-		/*
-		 * Nothing being received, we wait 3 seconds and then start IDLE
-		 */
+		// Nothing being received, we wait 3 seconds and then start IDLE
 		struct timespec ts;
 		get_nanoseconds(&ts);
 		if (imap->logged_in && imap->cap->idle && imap->mode != RECV_IDLE) {
@@ -265,14 +200,10 @@ int imap_receive(struct imap_connection *imap) {
 
 void handle_noop(struct imap_connection *imap, const char *token,
 		const char *cmd, imap_arg_t *args) {
-	/*
-	 * Handler for commands we don't care about to avoid logging unknown command
-	 * warnings.
-	 */
+	// This space intentionally left blank
 }
 
 void imap_init(struct imap_connection *imap) {
-	/* Set up the internal state of the IMAP connection */
 	imap->mode = RECV_WAIT;
 	imap->line = calloc(1, BUFFER_SIZE + 1);
 	imap->line_index = 0;
@@ -281,10 +212,6 @@ void imap_init(struct imap_connection *imap) {
 	imap->pending = create_hashtable(128, hash_string);
 	imap->mailboxes = create_list();
 	if (internal_handlers == NULL) {
-		/*
-		 * Internal IMAP handlers are stored in a hashtable keyed on the IMAP
-		 * command they handle. Here we register all of the internal handlers.
-		 */
 		internal_handlers = create_hashtable(128, hash_string);
 		hashtable_set(internal_handlers, "OK", handle_imap_status);
 		hashtable_set(internal_handlers, "NO", handle_imap_status);
@@ -314,11 +241,7 @@ void imap_close(struct imap_connection *imap) {
 
 bool imap_connect(struct imap_connection *imap, const struct uri *uri,
 		bool use_ssl, imap_callback_t callback, void *data) {
-	/*
-	 * Initializes an IMAP connection, connects to the server, and registers a
-	 * callback for when the connection is established and the server is ready.
-	 */
-	raw = fopen("raw.log", "w");
+	raw = fopen("raw.log", "w"); // temp, todo figure out a permenant solution
 	imap_init(imap);
 	imap->socket = absocket_new(uri, use_ssl);
 	if (!imap->socket) {

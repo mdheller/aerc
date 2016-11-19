@@ -7,10 +7,6 @@
 #include "util/hashtable.h"
 
 hashtable_t *create_hashtable(size_t buckets, unsigned int (*hash_function)(const void *)) {
-	/*
-	 * We let you provide the hash function for this implementation, so you can
-	 * hash arbitrary data.
-	 */
 	hashtable_t *table = malloc(sizeof(hashtable_t));
 	table->hash = hash_function;
 	table->bucket_count = buckets;
@@ -33,11 +29,6 @@ void free_hashtable(hashtable_t *table) {
 }
 
 bool hashtable_contains(hashtable_t *table, const void *key) {
-	/*
-	 * We run your hash function against the key, then mod the result against
-	 * the number of buckets we have. That's your bucket, which is a linked
-	 * list.
-	 */
 	unsigned int hash = table->hash(key);
 	unsigned int bucket = hash % table->bucket_count;
 	hashtable_entry_t *entry = table->buckets[bucket];
@@ -76,16 +67,11 @@ void *hashtable_get(hashtable_t *table, const void *key) {
 }
 
 void *hashtable_set(hashtable_t *table, const void *key, void *value) {
-	/*
-	 * Determine what bucket to use.
-	 */
 	unsigned int hash = table->hash(key);
 	unsigned int bucket = hash % table->bucket_count;
 	hashtable_entry_t *entry = table->buckets[bucket];
 	hashtable_entry_t *previous = NULL;
-	/*
-	 * Find the end of the linked list.
-	 */
+
 	if (entry) {
 		if (entry->key != hash) {
 			while (entry->next) {
@@ -97,9 +83,7 @@ void *hashtable_set(hashtable_t *table, const void *key, void *value) {
 			}
 		}
 	}
-	/*
-	 * Allocate a new entry and add it to the end of the linked list.
-	 */
+
 	if (entry == NULL) {
 		entry = calloc(1, sizeof(hashtable_entry_t));
 		entry->key = hash;
@@ -108,19 +92,18 @@ void *hashtable_set(hashtable_t *table, const void *key, void *value) {
 			previous->next = entry;
 		}
 	}
+
 	void *old = entry->value;
 	entry->value = value;
 	return old;
 }
 
 void *hashtable_del(hashtable_t *table, const void *key) {
-	/*
-	 * Find the entry...
-	 */
 	unsigned int hash = table->hash(key);
 	unsigned int bucket = hash % table->bucket_count;
 	hashtable_entry_t *entry = table->buckets[bucket];
 	hashtable_entry_t *previous = NULL;
+
 	if (entry) {
 		if (entry->key != hash) {
 			while (entry->next) {
@@ -132,9 +115,7 @@ void *hashtable_del(hashtable_t *table, const void *key) {
 			}
 		}
 	}
-	/*
-	 * ...then remove it from the end of the list, and free it.
-	 */
+
 	if (entry == NULL) {
 		return NULL;
 	} else {

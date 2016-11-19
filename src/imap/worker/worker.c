@@ -33,10 +33,6 @@ struct action_handler handlers[] = {
 };
 
 void handle_message(struct worker_pipe *pipe, struct worker_message *message) {
-	/*
-	 * Here we iterate over each of the handlers we support and invoke the
-	 * appropriate one.
-	 */
 	for (size_t i = 0; i < sizeof(handlers) / sizeof(struct action_handler); i++) {
 		if (handlers[i].action == message->type) {
 			handlers[i].handler(pipe, message);
@@ -93,10 +89,6 @@ struct aerc_mailbox *serialize_mailbox(struct mailbox *source) {
 }
 
 static void update_mailbox(struct imap_connection *imap, struct mailbox *updated) {
-	/*
-	 * Some detail about the mailbox has changed. Re-serialize it and re-send it
-	 * to the main thread.
-	 */
 	struct aerc_mailbox *mbox = serialize_mailbox(updated);
 	struct worker_pipe *pipe = imap->data;
 	worker_post_message(pipe, WORKER_MAILBOX_UPDATED, NULL, mbox);
@@ -118,10 +110,7 @@ static void delete_mailbox(struct imap_connection *imap, const char *mailbox) {
 }
 
 void *imap_worker(void *_pipe) {
-	/*
-	 * The IMAP worker's main thread. Receives messages over the async queue and
-	 * passes them to message handlers.
-	 */
+	/* Worker thread main loop */
 	struct worker_pipe *pipe = _pipe;
 	struct worker_message *message;
 	struct imap_connection *imap = calloc(1, sizeof(struct imap_connection));
@@ -133,15 +122,7 @@ void *imap_worker(void *_pipe) {
 	worker_log(L_DEBUG, "Starting IMAP worker");
 	while (1) {
 		bool sleep = true;
-		/*
-		 * First, we check for any actions the main thread has requested us to
-		 * perform.
-		 */
 		if (worker_get_action(pipe, &message)) {
-			/*
-			 * With each action, we check if it's asking us to close down the
-			 * thread, or we pass it along to the message handlers.
-			 */
 			if (message->type == WORKER_END) {
 				imap_close(imap);
 				free(imap);
@@ -153,18 +134,12 @@ void *imap_worker(void *_pipe) {
 			worker_message_free(message);
 			sleep = false;
 		}
-		/* 
-		 * Then, we do the usual IMAP connection housekeeping, receiving new
-		 * messages and passing them along to various handlers.
-		 */
 		if (imap_receive(imap)) {
 			sleep = false;
 		}
-
-		/*
-		 * Finally, we sleep for a bit and then loop back around again.
-		 */
 		if (sleep) {
+			// We only sleep if we aren't working
+			// Side note, it is currently 4:39 AM
 			struct timespec spec = { 0, .5e+8 };
 			nanosleep(&spec, NULL);
 		}
