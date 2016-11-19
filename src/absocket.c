@@ -70,7 +70,7 @@ static bool ab_ssl_negotiate(absocket_t *abs) {
 	return true;
 }
 
-static bool ab_ssl_connect(absocket_t *abs) {
+bool ab_enable_ssl(absocket_t *abs) {
 	/*
 	 * This function assumes that the connection has already been established,
 	 * it just does the SSL stuff.
@@ -160,7 +160,7 @@ absocket_t *absocket_new(const struct uri *uri, bool use_ssl) {
 		absocket_free(abs);
 		return NULL;
 #else
-		if (!ab_ssl_connect(abs)) {
+		if (!ab_enable_ssl(abs)) {
 			absocket_free(abs);
 			return NULL;
 		}
