@@ -152,11 +152,12 @@ void imap_send(struct imap_connection *imap, imap_callback_t callback,
 		fflush(raw);
 	}
 	hashtable_set(imap->pending, tag, make_callback(callback, data));
-	if (strncmp("LOGIN ", buf, 6) != 0) {
-		worker_log(L_DEBUG, "-> %s %s", tag, buf);
-	} else {
-		/* Obsfucate the debug logging if sending a sensitive command */
+	if (strncmp("LOGIN ", buf, 6) == 0) {
 		worker_log(L_DEBUG, "-> %s LOGIN *****", tag);
+	} else if (strncmp("AUTHENTICATE ", buf, 13) == 0) {
+		worker_log(L_DEBUG, "-> %s AUTHENTICATE *****", tag);
+	} else {
+		worker_log(L_DEBUG, "-> %s %s", tag, buf);
 	}
 
 	free(cmd);
