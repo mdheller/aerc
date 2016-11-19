@@ -12,12 +12,7 @@
 #include "urlparse.h"
 
 bool percent_decode(char *s) {
-	/*
-	 * Percent encoded strings (RFC 1738, 2.2) use a percent symbol followed by
-	 * two hex digits to represent certain characters. This function replaces
-	 * the percent encoded characters with the actual characters they represent
-	 * in-place.
-	 */
+	/* RFC 1738 section 2.2 */
 	if (!s) return true;
 	while (*s) {
 		if (*s == '+') {
@@ -38,17 +33,15 @@ bool percent_decode(char *s) {
  
 bool parse_uri(struct uri *res, const char *src) {
 	/*
-	 * URIs take the general form of:
+	 * Basically this:
 	 *
-	 * 	protocol:[//][user[:password]@]hostname[:port][/path][?query][#fragment]
+	 * protocol:[//][user[:password]@]hostname[:port][/path][?query][#fragment]
 	 *
-	 * This function only concerns itself with the protocol, user, password,
-	 * hostname, and port. It returns true if the URI is valid.
+	 * This function should probably be a state machine, but isn't. Too bad for
+	 * you reading it!
 	 */
 	memset(res, 0, sizeof(struct uri));
-	/*
-	 * First, we parse the scheme.
-	 */
+	// Parse scheme
 	const char *cur = src, *start = src;
 	while (*cur && *cur != ':') {
 		++cur;
@@ -58,57 +51,39 @@ bool parse_uri(struct uri *res, const char *src) {
 	strncpy(res->scheme, start, cur - start);
 	res->scheme[cur - start] = '\0';
 	++cur;
-	/*
-	 * The // is optional.
-	 */
+	// Fun fact: the // is optional in URIs
 	if (*cur == '/') cur++;
 	if (*cur == '/') cur++;
-	/*
-	 * Next, we extract a string that contains the user, pass, domain, and port.
-	 * This function doesn't parse the path/query/fragment, but we do tolerate
-	 * it.
-	 */
+	// user/pass/domain/port
 	if (!*cur) return false;
-	char *stop = "/?#\0"; // Any of these chararacters are stopping points
+	char *stop = "/?#\0";
 	start = cur;
 	while (*cur && !strchr(stop, *cur)) {
 		++cur;
 	}
-	/*
-	 * Measure/allocate/copy some the hostname string, which will (for now)
-	 * include the user/pass/port as well.
-	 */
+	// Note: hostname temporarily contains all the other fields too
 	res->hostname = malloc(cur - start + 1);
 	strncpy(res->hostname, start, cur - start);
 	res->hostname[cur - start] = '\0';
 	if (strchr(res->hostname, '@')) {
-		/*
-		 * A username/pass string is present in the hostname string. Extract it.
-		 */
+		// username
 		char *at = strchr(res->hostname, '@');
 		*at = '\0';
 		res->username = res->hostname;
 		res->hostname = strdup(at + 1);
 		if (strchr(res->username, ':')) {
-			/*
-			 * A password is present in the username/pass string. Extract it.
-			 */
+			// password
 			at = strchr(res->username, ':');
 			*at = '\0';
 			res->password = strdup(at + 1);
 		}
 	}
 	if (strchr(res->hostname, ':')) {
-		/*
-		 * A port is present in the hostname string. Extract it.
-		 */
+		// port
 		char *at = strchr(res->hostname, ':');
 		*at = '\0';
 		res->port = strdup(at + 1);
 	}
-	/*
-	 * Percent decode everything and return.
-	 */
 	if (!percent_decode(res->hostname)) return false;
 	if (!percent_decode(res->username)) return false;
 	if (!percent_decode(res->password)) return false;

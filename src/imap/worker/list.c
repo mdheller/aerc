@@ -18,9 +18,6 @@ struct list_data {
 
 void imap_list_callback(struct imap_connection *imap,
 		void *_data, enum imap_status status, const char *args) {
-	/*
-	 * Listing complete. Process some things and let the main thread know.
-	 */
 	struct list_data *data = _data;
 	if (status == STATUS_OK) {
 		list_t *mboxes = create_list();

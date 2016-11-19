@@ -35,9 +35,6 @@ void abs_init() {
 #ifdef USE_OPENSSL
 
 static bool ab_ssl_negotiate(absocket_t *abs) {
-	/*
-	 * This function performs SSL negotiation over the given socket.
-	 */
 	SSL_set_mode(abs->ssl, SSL_MODE_AUTO_RETRY);
 	int err;
 	if ((err = SSL_connect(abs->ssl)) != 1) {
@@ -58,9 +55,8 @@ static bool ab_ssl_negotiate(absocket_t *abs) {
 		return false;
 	}
 	/*
-	 * Grab the certificate from the server. We may later need to present it to
-	 * the user for approval (or simply check it for validatity against the
-	 * local certificate store).
+	 * Grabs the certificate because presumably the consumer of this function
+	 * will want it. We don't use it for anything here
 	 */
 	abs->cert = SSL_get_peer_certificate(abs->ssl);
 	if (!abs->cert) {
@@ -76,10 +72,8 @@ static bool ab_ssl_negotiate(absocket_t *abs) {
 
 static bool ab_ssl_connect(absocket_t *abs) {
 	/*
-	 * Initializes and configures the SSL context, then runs the socket through
-	 * ab_ssl_negotiate and we're golden. This function assumes that the
-	 * connection has already been established, it just configures SSL for the
-	 * socket.
+	 * This function assumes that the connection has already been established,
+	 * it just does the SSL stuff.
 	 */
 	long ssl_options = 0;
 	abs->ctx = SSL_CTX_new(SSLv23_client_method());
@@ -120,14 +114,8 @@ bail_abs:
 #endif
 
 absocket_t *absocket_new(const struct uri *uri, bool use_ssl) {
-	/*
-	 * Creates an absocket_t and connects to the provided server.
-	 */
 	absocket_t *abs = calloc(1, sizeof(absocket_t));
 
-	/*
-	 * Here we prepare an addrinfo struct for the DNS lookup.
-	 */
 	struct addrinfo hints;
 	memset(&hints, 0, sizeof(struct addrinfo));
 	hints.ai_family = AF_UNSPEC;
@@ -135,36 +123,25 @@ absocket_t *absocket_new(const struct uri *uri, bool use_ssl) {
 	hints.ai_flags = 0;
 	hints.ai_protocol = 0;
 
-	/*
-	 * Actually perform the DNS lookup:
-	 */
 	struct addrinfo *result, *rp;
 	int s;
 	if ((s = getaddrinfo(uri->hostname, uri->port, &hints, &result))) {
 		worker_log(L_ERROR, "Connection failed: %s", gai_strerror(s));
 		absocket_free(abs);
+		// This might fail becuase i.e. you screwed up the name of the server
 		return NULL;
 	}
-	/*
-	 * For each record returned from the DNS lookup, attempt to connect to it.
-	 * struct addrinfo is a linked list of records.
-	 */
+
 	int err = -1;
 	for (rp = result; rp != NULL; rp = rp->ai_next) {
-		/*
-		 * Create a socket for the correct address family and such. This might
-		 * fail, for example, if you don't have IPv6 on your system and the DNS
-		 * lookup returned AAAA records.
-		 */
 		abs->basefd = socket(rp->ai_family, rp->ai_socktype,
 				rp->ai_protocol);
 		if (abs->basefd == -1) {
+			// This might fail because i.e. you don't support ipv6
 			continue;
 		}
-		/*
-		 * Establish the actual TCP connection.
-		 */
 		if (connect(abs->basefd, rp->ai_addr, rp->ai_addrlen) != -1) {
+			// This might fail because i.e. the server is dead
 			break;
 		}
 		err = errno;
@@ -176,9 +153,6 @@ absocket_t *absocket_new(const struct uri *uri, bool use_ssl) {
 		return NULL;
 	}
 	freeaddrinfo(result);
-	/*
-	 * If asked to use SSL and it was compiled in, continue with ab_ssl_connect.
-	 */
 	abs->use_ssl = use_ssl;
 	if (use_ssl) {
 #ifndef USE_OPENSSL
@@ -209,11 +183,6 @@ void absocket_free(absocket_t *socket) {
 }
 
 ssize_t ab_recv(absocket_t *socket, void *buffer, size_t len) {
-	/*
-	 * Depending on whether or not SSL was enabled, this function will either
-	 * call the POSIX recv function or abstract it over the OpenSSL SSL_read
-	 * function.
-	 */
 	if (socket->use_ssl) {
 #ifdef USE_OPENSSL
 		return SSL_read(socket->ssl, buffer, len);
@@ -227,11 +196,6 @@ ssize_t ab_recv(absocket_t *socket, void *buffer, size_t len) {
 }
 
 ssize_t ab_send(absocket_t *socket, void *buffer, size_t len) {
-	/*
-	 * Depending on whether or not SSL was enabled, this function will either
-	 * call the POSIX send function or abstract it over the OpenSSL SSL_write
-	 * function.
-	 */
 	if (socket->use_ssl) {
 #ifdef USE_OPENSSL
 		return SSL_write(socket->ssl, buffer, len);
