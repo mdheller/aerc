@@ -210,7 +210,7 @@ void handle_imap_ready(struct imap_connection *imap, void *data,
 void imap_starttls_callback(struct imap_connection *imap, void *data,
 		enum imap_status status, const char *args) {
 	struct worker_pipe *pipe = data;
-	if (!ab_ssl_connect(imap->socket)) {
+	if (!ab_enable_ssl(imap->socket)) {
 		worker_post_message(pipe, WORKER_CONNECT_ERROR, NULL, "TLS connection failed.");
 		return;
 	}

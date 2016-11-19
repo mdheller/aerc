@@ -31,6 +31,6 @@ absocket_t *absocket_new(const struct uri *uri, bool use_ssl);
 void absocket_free(absocket_t *socket);
 ssize_t ab_recv(absocket_t *socket, void *buffer, size_t len);
 ssize_t ab_send(absocket_t *socket, void *buffer, size_t len);
-bool ab_ssl_connect(absocket_t *socket);
+bool ab_enable_ssl(absocket_t *socket);
 
 #endif

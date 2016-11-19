@@ -74,7 +74,7 @@ static bool ab_ssl_negotiate(absocket_t *abs) {
 	return true;
 }
 
-bool ab_ssl_connect(absocket_t *abs) {
+bool ab_enable_ssl(absocket_t *abs) {
 	/*
 	 * Initializes and configures the SSL context, then runs the socket through
 	 * ab_ssl_negotiate and we're golden. This function assumes that the
@@ -177,7 +177,7 @@ absocket_t *absocket_new(const struct uri *uri, bool use_ssl) {
 	}
 	freeaddrinfo(result);
 	/*
-	 * If asked to use SSL and it was compiled in, continue with ab_ssl_connect.
+	 * If asked to use SSL and it was compiled in, continue with ab_enable_ssl.
 	 */
 	abs->use_ssl = use_ssl;
 	if (use_ssl) {
@@ -186,7 +186,7 @@ absocket_t *absocket_new(const struct uri *uri, bool use_ssl) {
 		absocket_free(abs);
 		return NULL;
 #else
-		if (!ab_ssl_connect(abs)) {
+		if (!ab_enable_ssl(abs)) {
 			absocket_free(abs);
 			return NULL;
 		}
