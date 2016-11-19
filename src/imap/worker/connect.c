@@ -21,6 +21,9 @@
 void handle_imap_ready(struct imap_connection *imap, void *data,
 		enum imap_status status, const char *args);
 
+void imap_starttls_callback(struct imap_connection *imap, void *data,
+		enum imap_status status, const char *args);
+
 void handle_worker_connect(struct worker_pipe *pipe, struct worker_message *message) {
 	/*
 	 * The main thread has asked us to establish an IMAP connection. Let's do
@@ -179,6 +182,8 @@ void handle_imap_cap(struct imap_connection *imap, void *data,
 			imap_send(imap, handle_imap_logged_in, pipe, "LOGIN \"%s\" \"%s\"",
 					imap->uri->username, imap->uri->password);
 		}
+	} else if (imap->cap->starttls) {
+		imap_send(imap, imap_starttls_callback, pipe, "STARTTLS");
 	} else {
 		worker_post_message(pipe, WORKER_CONNECT_ERROR, NULL,
 				"IMAP server and client do not share any supported "
@@ -200,4 +205,15 @@ void handle_imap_ready(struct imap_connection *imap, void *data,
 		return;
 	}
 	handle_imap_cap(imap, pipe, STATUS_OK, NULL);
+}
+
+void imap_starttls_callback(struct imap_connection *imap, void *data,
+		enum imap_status status, const char *args) {
+	struct worker_pipe *pipe = data;
+	if (!ab_ssl_connect(imap->socket)) {
+		worker_post_message(pipe, WORKER_CONNECT_ERROR, NULL, "TLS connection failed.");
+		return;
+	}
+	imap->socket->use_ssl = true;
+	imap_send(imap, handle_imap_cap, pipe, "CAPABILITY");
 }

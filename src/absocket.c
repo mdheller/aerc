@@ -74,7 +74,7 @@ static bool ab_ssl_negotiate(absocket_t *abs) {
 	return true;
 }
 
-static bool ab_ssl_connect(absocket_t *abs) {
+bool ab_ssl_connect(absocket_t *abs) {
 	/*
 	 * Initializes and configures the SSL context, then runs the socket through
 	 * ab_ssl_negotiate and we're golden. This function assumes that the
