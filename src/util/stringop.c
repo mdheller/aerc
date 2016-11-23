@@ -181,7 +181,7 @@ char *join_list(list_t *list, char *separator) {
 		len += strlen(list->items[i]);
 	}
 
-	if(len == 0) {
+	if(list->length == 0) {
 		return strdup("");
 	}
 
