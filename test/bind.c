@@ -22,18 +22,14 @@ static void test_reject_invalid_command(void **state) {
 	destroy_bind(&bind);
 }
 
-static void test_reject_invalid_keys(void **state) {
+static void test_reject_invalid_binds(void **state) {
 	struct bind bind;
 	init_bind(&bind);
 
 	static const char *keys[] = {
 		"Ctrl+=",
-		"foobar",
 		"=",
 		"",
-		"Shift+W",
-		"Shift+Eq",
-		"Ctrl+Ctrl+x",
 	};
 
 	for (size_t i = 0; i < sizeof keys / sizeof keys[0]; ++i) {
@@ -43,27 +39,27 @@ static void test_reject_invalid_keys(void **state) {
 	destroy_bind(&bind);
 }
 
-static void test_accept_valid_keys(void **state) {
+static void test_accept_valid_binds(void **state) {
 	struct bind bind;
 	init_bind(&bind);
 
 	static const char *keys[] = {
-		"Ctrl+q",
-		"Ctrl+E",
-		"Meta+!",
-		"Space",
-		"Ctrl++",
-		"Ctrl+Eq",
-		"# 2",
-		"Ctrl+x s",
-		"Ctrl+x z",
+		"<Ctrl+q>",
+		"<Ctrl+E>",
+		"<Meta+!>",
+		"<Space>",
+		"<Ctrl++>",
+		"<Ctrl+Eq>",
+		"#2",
+		"<Ctrl+x>s",
+		"<Ctrl+x>z",
 		"s",
 		"W",
-		"Ctrl+Meta+Delete",
+		"<Ctrl+Meta+Delete>",
 		";",
-		"F1",
-		"Meta+Backspace",
-		"Shift+Left",
+		"<F1>",
+		"<Meta+Backspace>",
+		"<Shift+Left>",
 	};
 
 	for (size_t i = 0; i < sizeof keys / sizeof keys[0]; ++i) {
@@ -73,17 +69,17 @@ static void test_accept_valid_keys(void **state) {
 	destroy_bind(&bind);
 }
 
-static void test_reject_conflicting_keys(void **state) {
+static void test_reject_conflicting_binds(void **state) {
 	struct bind bind;
 	init_bind(&bind);
 
-	assert_int_equal(BIND_SUCCESS, bind_add(&bind, "a b", "command"));
+	assert_int_equal(BIND_SUCCESS, bind_add(&bind, "ab", "command"));
 
 	//Conflict if it's a prefix of an existing bind
 	assert_int_equal(BIND_CONFLICTS, bind_add(&bind, "a", "command"));
 
 	//Conflict if it's an extension of an existing bind
-	assert_int_equal(BIND_CONFLICTS, bind_add(&bind, "a b a", "command"));
+	assert_int_equal(BIND_CONFLICTS, bind_add(&bind, "aba", "command"));
 
 	destroy_bind(&bind);
 }
@@ -150,8 +146,8 @@ static void test_get_input_buffer(void **state) {
 	struct bind bind;
 	init_bind(&bind);
 
-	assert_int_equal(BIND_SUCCESS, bind_add(&bind, "a b c", "alpha beta"));
-	assert_int_equal(BIND_SUCCESS, bind_add(&bind, "a b d", "beta alpha"));
+	assert_int_equal(BIND_SUCCESS, bind_add(&bind, "abc", "alpha beta"));
+	assert_int_equal(BIND_SUCCESS, bind_add(&bind, "abd", "beta alpha"));
 
 	struct tb_event e;
 	e = generate_event('a', 0, 0);
@@ -160,7 +156,7 @@ static void test_get_input_buffer(void **state) {
 	bind_handle_key_event(&bind, &e);
 
 	char *input = bind_input_buffer(&bind);
-	assert_string_equal("a b", input);
+	assert_string_equal("ab", input);
 	free(input);
 
 	destroy_bind(&bind);
@@ -170,11 +166,11 @@ static void test_remember_binds(void **state) {
 	struct bind bind;
 	init_bind(&bind);
 
-	assert_int_equal(BIND_SUCCESS, bind_add(&bind, "a b", "alpha beta"));
-	assert_int_equal(BIND_SUCCESS, bind_add(&bind, "b a", "beta alpha"));
-	assert_int_equal(BIND_SUCCESS, bind_add(&bind, "Ctrl+x s", "save"));
-	assert_int_equal(BIND_SUCCESS, bind_add(&bind, "Meta+q", "quiet"));
-	assert_int_equal(BIND_SUCCESS, bind_add(&bind, "Ctrl+x o", "open"));
+	assert_int_equal(BIND_SUCCESS, bind_add(&bind, "ab", "alpha beta"));
+	assert_int_equal(BIND_SUCCESS, bind_add(&bind, "ba", "beta alpha"));
+	assert_int_equal(BIND_SUCCESS, bind_add(&bind, "<Ctrl+x>s", "save"));
+	assert_int_equal(BIND_SUCCESS, bind_add(&bind, "<Meta+q>", "quiet"));
+	assert_int_equal(BIND_SUCCESS, bind_add(&bind, "<Ctrl+x>o", "open"));
 
 	struct tb_event e;
 
@@ -209,9 +205,9 @@ static void test_remember_binds(void **state) {
 int run_tests_bind() {
 	const struct CMUnitTest tests[] = {
 		cmocka_unit_test(test_reject_invalid_command),
-		cmocka_unit_test(test_reject_invalid_keys),
-		cmocka_unit_test(test_accept_valid_keys),
-		cmocka_unit_test(test_reject_conflicting_keys),
+		cmocka_unit_test(test_reject_invalid_binds),
+		cmocka_unit_test(test_accept_valid_binds),
+		cmocka_unit_test(test_reject_conflicting_binds),
 		cmocka_unit_test(test_translate_key_event),
 		cmocka_unit_test(test_translate_key_name),
 		cmocka_unit_test(test_get_input_buffer),
