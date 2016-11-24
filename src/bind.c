@@ -1,6 +1,7 @@
 #define _POSIX_C_SOURCE 201112LL
 
 #include <ctype.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -115,25 +116,25 @@ static const struct {
 
 void add_default_bindings(struct bind *binds) {
 	bind_add(binds, "q", ":quit<Enter>");
-	bind_add(binds, "Ctrl+c", ":quit<Enter>");
+	bind_add(binds, "<Ctrl+c>", ":quit<Enter>");
 
 	bind_add(binds, "h", ":previous-mailbox<Enter>");
-	bind_add(binds, "Left", ":previous-mailbox<Enter>");
+	bind_add(binds, "<Left>", ":previous-mailbox<Enter>");
 
 	bind_add(binds, "j", ":next-message<Enter>");
-	bind_add(binds, "Down", ":next-message<Enter>");
-	bind_add(binds, "Ctrl+d", ":next-message --scroll 50%<Enter>");
-	bind_add(binds, "PageDown", ":next-message --scroll 100%<Enter>");
-	bind_add(binds, "WheelDown", ":next-message --scroll 1<Enter>");
+	bind_add(binds, "<Down>", ":next-message<Enter>");
+	bind_add(binds, "<Ctrl+d>", ":next-message --scroll 50%<Enter>");
+	bind_add(binds, "<PageDown>", ":next-message --scroll 100%<Enter>");
+	bind_add(binds, "<WheelDown>", ":next-message --scroll 1<Enter>");
 
 	bind_add(binds, "k", ":previous-message<Enter>");
-	bind_add(binds, "Up", ":previous-message<Enter>");
-	bind_add(binds, "Ctrl+u", ":previous-message --scroll 50%<Enter>");
-	bind_add(binds, "PageUp", ":previous-message --scroll 100%<Enter>");
-	bind_add(binds, "WheelUp", ":previous-message --scroll 1<Enter>");
+	bind_add(binds, "<Up>", ":previous-message<Enter>");
+	bind_add(binds, "<Ctrl+u>", ":previous-message --scroll 50%<Enter>");
+	bind_add(binds, "<PageUp>", ":previous-message --scroll 100%<Enter>");
+	bind_add(binds, "<WheelUp>", ":previous-message --scroll 1<Enter>");
 
 	bind_add(binds, "l", ":next-mailbox<Enter>");
-	bind_add(binds, "Right", ":next-mailbox<Enter>");
+	bind_add(binds, "<Right>", ":next-mailbox<Enter>");
 
 	bind_add(binds, "J", ":next-folder<Enter>");
 	bind_add(binds, "K", ":previous-folder<Enter>");
@@ -202,13 +203,67 @@ static int is_valid_key(const char *key) {
 	return 0;
 }
 
+static bool is_valid_special_key(const char* key) {
+	const size_t len = sizeof(key_name_pairs) / sizeof(*key_name_pairs);
+	for (size_t i = 0; i < len; ++i) {
+		if (!strcmp(key, key_name_pairs[i].name)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static list_t *split_bind(const char* str) {
+	list_t *list = create_list();
+	// Iterate through the string, breaking it into its parts
+	while(*str) {
+		if (*str == '<') {
+			// Is this a special key?
+			const char* end = str;
+			while(*end && *end != '>')
+				++end;
+			if (*end == '>') {
+				// We've got a <stuff> block. Check if it's a valid special key name.
+				const size_t key_len = end - str;
+				char* key = malloc(key_len);
+				memcpy(key, str + 1 /* skip the '<' */, key_len - 1);
+				key[key_len] = 0;
+
+				if (is_valid_special_key(key)) {
+					list_add(list, key);
+					str = end + 1;
+					continue;
+				} else {
+					free(key);
+				}
+			}
+		}
+
+		if (isgraph(*str)) {
+			// Just a regular character?
+			char* item = malloc(2);
+			item[0] = *str;
+			item[1] = 0;
+			list_add(list, item);
+			++str;
+			continue;
+		}
+
+		// Reached this point? It's something weird. Ignore it for now.
+		++str;
+	}
+
+	return list;
+}
+
+
 static int is_valid_keys(const char *keys) {
 	if (!keys || strlen(keys) == 0) {
 		return 0;
 	}
 
 	int valid = 1;
-	list_t *parts = split_string(keys, " ");
+	list_t *parts = split_bind(keys);
 
 	for (size_t i = 0; i < parts->length; ++i) {
 		if (!is_valid_key(parts->items[i])) {
@@ -254,7 +309,7 @@ enum bind_result bind_add(struct bind* bind, const char* keys, const char* comma
 	}
 
 	// Split the key up into its individual parts
-	list_t *parts = split_string(dirty_keys, " ");
+	list_t *parts = split_bind(dirty_keys);
 
 	//Prepare our return code
 	int result = BIND_SUCCESS;
@@ -382,7 +437,7 @@ static enum lookup_result lookup_binding(struct bind_node *node, list_t *keys, c
 }
 
 char* bind_input_buffer(struct bind *bind) {
-	return join_list(bind->keys, " ");
+	return join_list(bind->keys, NULL);
 }
 
 static void clear_input_buffer(struct bind *bind) {
