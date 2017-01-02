@@ -235,7 +235,18 @@ void rerender() {
 	if (state->command.text) {
 		tb_set_cursor(config->ui.sidebar_width + strlen(state->command.text) + 1, height - 1);
 	} else {
-		tb_set_cursor(TB_HIDE_CURSOR, TB_HIDE_CURSOR);
+		if (account->viewer.screen) {
+			unsigned int flags = tsm_screen_get_flags(account->viewer.screen);
+			if ((flags & TSM_SCREEN_HIDE_CURSOR)) {
+				tb_set_cursor(TB_HIDE_CURSOR, TB_HIDE_CURSOR);
+			} else {
+				tb_set_cursor(
+					tsm_screen_get_cursor_x(account->viewer.screen),
+					tsm_screen_get_cursor_y(account->viewer.screen));
+			}
+		} else {
+			tb_set_cursor(TB_HIDE_CURSOR, TB_HIDE_CURSOR);
+		}
 	}
 	tb_present();
 	state->rerender = PANEL_NONE;

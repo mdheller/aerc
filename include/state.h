@@ -41,6 +41,8 @@ struct account_state {
 	struct {
 		struct tsm_screen *screen;
 		struct tsm_vte *vte;
+		pid_t pid;
+		int fd;
 	} viewer;
 
 	char *name;

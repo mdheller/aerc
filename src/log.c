@@ -46,22 +46,6 @@ void _worker_vlog(const char *filename, int line, enum log_level level,
 void _worker_vlog(enum log_level level, const char* format, va_list ap) {
 #endif
 	if (level <= l) {
-#ifndef NDEBUG
-		char *file = strdup(filename);
-		fprintf(stderr, "[%s:%d] ", basename(file), line);
-		free(file);
-#endif
-		vfprintf(stderr, format, ap);
-	}
-}
-
-#ifndef NDEBUG
-void _worker_log(const char *filename, int line, enum log_level level,
-		const char* format, ...) {
-#else
-void _worker_log(enum log_level level, const char* format, ...) {
-#endif
-	if (level <= l) {
 		unsigned int c = level;
 		if (c > sizeof(level_colors) / sizeof(char *)) {
 			c = sizeof(level_colors) / sizeof(char *) - 1;
@@ -71,18 +55,32 @@ void _worker_log(enum log_level level, const char* format, ...) {
 			fprintf(stderr, "%s", level_colors[c]);
 		}
 
-		va_list args;
-		va_start(args, format);
 #ifndef NDEBUG
-		_worker_vlog(filename, line, level, format, args);
-#else
-		_worker_vlog(level, format, args);
+		char *file = strdup(filename);
+		fprintf(stderr, "[%s:%d] ", basename(file), line);
+		free(file);
 #endif
-		va_end(args);
+		vfprintf(stderr, format, ap);
 
 		if (colored && isatty(STDERR_FILENO)) {
 			fprintf(stderr, "\x1B[0m");
 		}
 		fprintf(stderr, "\n");
 	}
+}
+
+#ifndef NDEBUG
+void _worker_log(const char *filename, int line, enum log_level level,
+		const char* format, ...) {
+#else
+void _worker_log(enum log_level level, const char* format, ...) {
+#endif
+	va_list args;
+	va_start(args, format);
+#ifndef NDEBUG
+	_worker_vlog(filename, line, level, format, args);
+#else
+	_worker_vlog(level, format, args);
+#endif
+	va_end(args);
 }
