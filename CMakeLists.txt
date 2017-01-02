@@ -29,6 +29,7 @@ if(enable-openssl)
 endif()
 
 find_package(Termbox REQUIRED)
+find_package(Libtsm REQUIRED)
 find_package(CMocka)
 
 include_directories(
@@ -57,6 +58,13 @@ endif()
 
 MESSAGE(STATUS "Termbox: ${TERMBOX_LIBRARIES}")
 
-TARGET_LINK_LIBRARIES(aerc pthread ${OPENSSL_LIBRARIES} ${TERMBOX_LIBRARIES})
+TARGET_LINK_LIBRARIES(aerc
+    pthread
+    ${OPENSSL_LIBRARIES}
+    ${TERMBOX_LIBRARIES}
+    ${LIBTSM_LIBRARIES}
+)
+
 INSTALL(TARGETS aerc RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
+
 INSTALL(DIRECTORY ${PROJECT_SOURCE_DIR}/config/ DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/aerc COMPONENT config)

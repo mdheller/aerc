@@ -18,5 +18,6 @@ void render_sidebar(struct geometry geo);
 void render_status(struct geometry geo);
 void render_items(struct geometry geo);
 void render_item(struct geometry geo, struct aerc_message *message, bool selected);
+void render_message_view(struct geometry geo);
 
 #endif

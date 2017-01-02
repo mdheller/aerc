@@ -6,6 +6,7 @@
 
 #include "util/stringop.h"
 #include "commands.h"
+#include "subterm.h"
 #include "config.h"
 #include "state.h"
 #include "log.h"
@@ -219,6 +220,16 @@ static void handle_set(int argc, char **argv) {
 	free(value);
 }
 
+static void handle_view_message(int argc, char **argv) {
+	struct account_state *account =
+		state->accounts->items[state->selected_account];
+	if (argc != 0) {
+		set_status(account, ACCOUNT_ERROR, "Usage: view-message");
+		return;
+	}
+	initialize_subterm();
+}
+
 struct cmd_handler {
 	char *command;
 	void (*handler)(int argc, char **argv);
@@ -240,6 +251,7 @@ struct cmd_handler cmd_handlers[] = {
 	{ "reload", handle_reload },
 	{ "select-message", handle_select_message },
 	{ "set", handle_set },
+	{ "view-message", handle_view_message },
 };
 
 static int handler_compare(const void *_a, const void *_b) {

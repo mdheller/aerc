@@ -142,6 +142,9 @@ void add_default_bindings(struct bind *binds) {
 	bind_add(binds, "G", ":select-message -1<Enter>");
 
 	bind_add(binds, "c", ":cd ");
+
+	bind_add(binds, "<Enter>", ":view-message<Enter>");
+	bind_add(binds, "<Space>", ":view-message<Enter>");
 }
 
 static void init_bind_node(struct bind_node *bn) {

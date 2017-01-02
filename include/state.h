@@ -4,6 +4,7 @@
 #include <stdarg.h>
 #include <pthread.h>
 #include <time.h>
+#include <libtsm.h>
 
 #include "bind.h"
 #include "util/list.h"
@@ -36,6 +37,11 @@ struct account_state {
 		size_t list_offset;
 		list_t *fetch_requests;
 	} ui;
+	
+	struct {
+		struct tsm_screen *screen;
+		struct tsm_vte *vte;
+	} viewer;
 
 	char *name;
 	list_t *mailboxes;

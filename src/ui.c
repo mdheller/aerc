@@ -179,6 +179,17 @@ static void rerender_status_bar() {
 	render_status(geo);
 }
 
+static void rerender_message_view() {
+	struct geometry geo = {
+		.x = config->ui.sidebar_width,
+		.y = 1,
+		.width = tb_width() - config->ui.sidebar_width,
+		.height = tb_height() - 2
+	};
+	state->panels.message_view = geo;
+	render_message_view(geo);
+}
+
 void rerender() {
 	free_flat_list(loading_indicators);
 	loading_indicators = create_list();
@@ -192,6 +203,9 @@ void rerender() {
 	};
 	state->panels.client = client;
 
+	struct account_state *account =
+		state->accounts->items[state->selected_account];
+
 	if(state->rerender & PANEL_ALL) {
 		tb_clear();
 	}
@@ -204,13 +218,15 @@ void rerender() {
 		rerender_sidebar();
 	}
 
-	reset_fetches();
-
-	if (state->rerender & (PANEL_MESSAGE_LIST | PANEL_ALL)) {
-		rerender_message_list();
+	if (state->rerender & (PANEL_MESSAGE_VIEW) && account->viewer.screen) {
+		rerender_message_view();
+	} else {
+		reset_fetches();
+		if (state->rerender & (PANEL_MESSAGE_LIST | PANEL_ALL)) {
+			rerender_message_list();
+		}
+		fetch_pending();
 	}
-
-	fetch_pending();
 
 	if (state->rerender & (PANEL_STATUS_BAR | PANEL_ALL)) {
 		rerender_status_bar();

@@ -40,6 +40,22 @@ void reset_log_level(void) {
 }
 
 #ifndef NDEBUG
+void _worker_vlog(const char *filename, int line, enum log_level level,
+		const char* format, va_list ap) {
+#else
+void _worker_vlog(enum log_level level, const char* format, va_list ap) {
+#endif
+	if (level <= l) {
+#ifndef NDEBUG
+		char *file = strdup(filename);
+		fprintf(stderr, "[%s:%d] ", basename(file), line);
+		free(file);
+#endif
+		vfprintf(stderr, format, ap);
+	}
+}
+
+#ifndef NDEBUG
 void _worker_log(const char *filename, int line, enum log_level level,
 		const char* format, ...) {
 #else
@@ -58,11 +74,10 @@ void _worker_log(enum log_level level, const char* format, ...) {
 		va_list args;
 		va_start(args, format);
 #ifndef NDEBUG
-		char *file = strdup(filename);
-		fprintf(stderr, "[%s:%d] ", basename(file), line);
-		free(file);
+		_worker_vlog(filename, line, level, format, args);
+#else
+		_worker_vlog(level, format, args);
 #endif
-		vfprintf(stderr, format, args);
 		va_end(args);
 
 		if (colored && isatty(STDERR_FILENO)) {

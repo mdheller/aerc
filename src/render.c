@@ -232,3 +232,11 @@ void render_items(struct geometry geo) {
 		render_item(geo, message, selected == i);
 	}
 }
+
+void render_message_view(struct geometry geo) {
+	struct tb_cell cell = {
+		.fg = TB_DEFAULT,
+		.bg = TB_DEFAULT,
+	};
+	clear_remaining(&cell, geo);
+}

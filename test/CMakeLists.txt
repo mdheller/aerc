@@ -33,4 +33,10 @@ set_target_properties(tests
     LINK_FLAGS "${WRAPPED}"
 )
 
-target_link_libraries(tests pthread ${CMOCKA_LIBRARIES} ${OPENSSL_LIBRARIES} ${TERMBOX_LIBRARIES})
+target_link_libraries(tests
+    pthread
+    ${CMOCKA_LIBRARIES}
+    ${OPENSSL_LIBRARIES}
+    ${TERMBOX_LIBRARIES}
+    ${LIBTSM_LIBRARIES}
+)
