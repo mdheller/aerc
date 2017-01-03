@@ -227,7 +227,7 @@ static void handle_view_message(int argc, char **argv) {
 		set_status(account, ACCOUNT_ERROR, "Usage: view-message");
 		return;
 	}
-	initialize_subterm();
+	initialize_subterm("less");
 }
 
 struct cmd_handler {

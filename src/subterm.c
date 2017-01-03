@@ -49,7 +49,7 @@ static char pty_recv(int fd) {
 	return (r <= 0) ? SHL_PTY_FAILED : d;
 }
 
-static void initialize_child(int comm[2], int fd) {
+static void initialize_child(int comm[2], int fd, const char *exe) {
 	// child
 	close(comm[0]);
 
@@ -113,8 +113,8 @@ static void initialize_child(int comm[2], int fd) {
 	pty_send(comm[1], SHL_PTY_SETUP);
 	close(comm[1]);
 	setenv("TERM", "xterm-256color", 1);
-	char **argv = (char*[]){ "/usr/bin/htop", NULL };
-	execve(argv[0], argv, environ);
+	char **argv = (char*[]){ strdup(exe), NULL };
+	execvp(argv[0], argv);
 	exit(1);
 fail_slave:
 	close(slave);
@@ -124,7 +124,7 @@ fail:
 	exit(1);
 }
 
-static bool initialize_host(pid_t *out_pid, int *out_fd) {
+static bool initialize_host(pid_t *out_pid, int *out_fd, const char *exe) {
 	int fd = posix_openpt(O_RDWR | O_NOCTTY | O_CLOEXEC | O_NONBLOCK);
 	if (fd < 0) {
 		return false;
@@ -144,7 +144,7 @@ static bool initialize_host(pid_t *out_pid, int *out_fd) {
 		close(fd);
 		return false;
 	} else if (!pid) {
-		initialize_child(comm, fd);
+		initialize_child(comm, fd, exe);
 	}
 	close(comm[1]);
 	char d = pty_recv(comm[0]);
@@ -184,7 +184,7 @@ static void subterm_write(struct tsm_vte *vte, const char *u8,
 	request_rerender(PANEL_MESSAGE_VIEW);
 }
 
-void initialize_subterm() {
+void initialize_subterm(const char *exe) {
 	worker_log(L_DEBUG, "Setting up subterm");
 	struct account_state *account =
 		state->accounts->items[state->selected_account];
@@ -193,7 +193,7 @@ void initialize_subterm() {
 	tsm_vte_new(&account->viewer.vte,
 			account->viewer.screen, subterm_write, NULL, subterm_log, NULL);
 
-	if (!initialize_host(&account->viewer.pid, &account->viewer.fd)) {
+	if (!initialize_host(&account->viewer.pid, &account->viewer.fd, exe)) {
 		set_status(account, ACCOUNT_ERROR, "Error initializing terminal");
 		return;
 	}
@@ -212,6 +212,8 @@ void cleanup_subterm() {
 	tsm_screen_unref(account->viewer.screen);
 	account->viewer.vte = NULL;
 	account->viewer.screen = NULL;
+
+	request_rerender(PANEL_ALL);
 }
 
 void subterm_tick() {
