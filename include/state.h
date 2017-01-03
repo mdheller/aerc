@@ -53,7 +53,6 @@ struct account_state {
 };
 
 struct aerc_state {
-	struct timespec last_draw;
 	size_t selected_account;
 	list_t *accounts;
 	bool exit;
