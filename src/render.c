@@ -8,6 +8,7 @@
 #include "state.h"
 #include "ui.h"
 #include "util/list.h"
+#include "subterm.h"
 #include "worker.h"
 #include "log.h"
 
@@ -233,13 +234,31 @@ void render_items(struct geometry geo) {
 	}
 }
 
+static int tsm_draw_cb(struct tsm_screen *con,uint32_t id, const uint32_t *ch,
+	   size_t len, unsigned int width, unsigned int posx, unsigned int posy,
+	   const struct tsm_screen_attr *attr, tsm_age_t age, void *data) {
+	struct geometry *geo = data;
+	// TODO: handle colors, age
+	struct tb_cell cell = {
+		.fg = TB_DEFAULT,
+		.bg = TB_DEFAULT,
+	};
+	while (len--) {
+		cell.ch = *ch;
+		tb_put_cell(geo->x + posx++, geo->y + posy++, &cell);
+		++ch;
+	}
+	return 0;
+}
+
 void render_message_view(struct geometry geo) {
 	struct tb_cell cell = {
 		.fg = TB_DEFAULT,
 		.bg = TB_DEFAULT,
 	};
 	clear_remaining(&cell, geo);
-
+	subterm_resize(geo.width, geo.height);
 	struct account_state *account =
 		state->accounts->items[state->selected_account];
+	tsm_screen_draw(account->viewer.screen, tsm_draw_cb, &geo);
 }

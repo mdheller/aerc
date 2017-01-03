@@ -15,6 +15,7 @@
 #include <sys/uio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <termios.h>
 #include <unistd.h>
 
@@ -30,11 +31,6 @@ enum shl_pty_msg {
 	SHL_PTY_FAILED,
 	SHL_PTY_SETUP,
 };
-
-static void subterm_log(void *data, const char *file, int line, const char *func,
-		const char *subs, unsigned int sev, const char *format, va_list args) {
-	worker_vlog(L_DEBUG, format, args);
-}
 
 static int pty_send(int fd, char d) {
 	int r;
@@ -116,8 +112,8 @@ static void initialize_child(int comm[2], int fd) {
 	}
 	pty_send(comm[1], SHL_PTY_SETUP);
 	close(comm[1]);
-	setenv("TERM", "xterm-256color", 1);
-	char **argv = (char*[]){ "/usr/bin/vim", NULL };
+	setenv("TERM", "xterm", 1);
+	char **argv = (char*[]){ "/usr/bin/htop", NULL };
 	execve(argv[0], argv, environ);
 	exit(1);
 fail_slave:
@@ -175,6 +171,19 @@ void subterm_resize(unsigned short width, unsigned short height) {
 	ioctl(account->viewer.fd, TIOCSWINSZ, &ws);
 }
 
+static void subterm_log(void *data, const char *file, int line, const char *func,
+		const char *subs, unsigned int sev, const char *format, va_list args) {
+	worker_vlog(L_DEBUG, format, args);
+}
+
+static void subterm_write(struct tsm_vte *vte, const char *u8,
+		size_t len, void *data) {
+	struct account_state *account =
+		state->accounts->items[state->selected_account];
+	write(account->viewer.fd, u8, len);
+	request_rerender(PANEL_MESSAGE_VIEW);
+}
+
 void initialize_subterm() {
 	worker_log(L_DEBUG, "Setting up subterm");
 	struct account_state *account =
@@ -182,9 +191,7 @@ void initialize_subterm() {
 	tsm_screen_new(&account->viewer.screen, subterm_log, NULL);
 	tsm_screen_resize(account->viewer.screen, 80, 24);
 	tsm_vte_new(&account->viewer.vte,
-			account->viewer.screen,
-			NULL, NULL,
-			subterm_log, NULL);
+			account->viewer.screen, subterm_write, NULL, subterm_log, NULL);
 
 	if (!initialize_host(&account->viewer.pid, &account->viewer.fd)) {
 		set_status(account, ACCOUNT_ERROR, "Error initializing terminal");
@@ -192,6 +199,7 @@ void initialize_subterm() {
 	}
 
 	request_rerender(PANEL_MESSAGE_VIEW);
+	// TODO: handle SIGCHLD
 }
 
 void cleanup_subterm() {
@@ -200,7 +208,23 @@ void cleanup_subterm() {
 	close(account->viewer.fd);
 	tsm_vte_unref(account->viewer.vte);
 	tsm_screen_unref(account->viewer.screen);
+	account->viewer.vte = NULL;
+	account->viewer.screen = NULL;
 }
 
 void subterm_tick() {
+	struct account_state *account =
+		state->accounts->items[state->selected_account];
+	static char buf[128];
+	int r = read(account->viewer.fd, &buf, sizeof(buf));
+	if (r == -1) {
+		if (errno != EAGAIN) {
+			cleanup_subterm();
+			return;
+		}
+	}
+	if (r > 0) {
+		tsm_vte_input(account->viewer.vte, buf, r);
+		request_rerender(PANEL_MESSAGE_VIEW);
+	}
 }

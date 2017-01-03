@@ -10,6 +10,7 @@
 
 #include "util/stringop.h"
 #include "util/list.h"
+#include "subterm.h"
 #include "commands.h"
 #include "config.h"
 #include "colors.h"
@@ -218,7 +219,8 @@ void rerender() {
 		rerender_sidebar();
 	}
 
-	if (state->rerender & (PANEL_MESSAGE_VIEW) && account->viewer.screen) {
+	if (state->rerender & (PANEL_MESSAGE_VIEW | PANEL_MESSAGE_LIST | PANEL_ALL)
+			&& account->viewer.screen) {
 		rerender_message_view();
 	} else {
 		reset_fetches();
@@ -500,10 +502,17 @@ bool ui_tick() {
 
 	// If there's events in the queue still, it's because we're exiting, and we
 	// need to clean up.
-	while(aqueue_dequeue(events, (void**)&event)) {
+	while (aqueue_dequeue(events, (void**)&event)) {
 		free(event);
 	}
 	aqueue_free(events);
+
+	struct account_state *account =
+		state->accounts->items[state->selected_account];
+
+	if (account->viewer.screen) {
+		subterm_tick();
+	}
 
 	if (state->rerender != PANEL_NONE) {
 		rerender();
