@@ -219,16 +219,17 @@ static bool is_valid_special_key(const char* key) {
 static list_t *split_bind(const char* str) {
 	list_t *list = create_list();
 	// Iterate through the string, breaking it into its parts
-	while(*str) {
+	while (*str) {
 		if (*str == '<') {
 			// Is this a special key?
-			const char* end = str;
-			while(*end && *end != '>')
+			const char *end = str;
+			while (*end && *end != '>') {
 				++end;
+			}
 			if (*end == '>') {
 				// We've got a <stuff> block. Check if it's a valid special key name.
 				const size_t key_len = end - str;
-				char* key = malloc(key_len);
+				char *key = malloc(key_len);
 				memcpy(key, str + 1 /* skip the '<' */, key_len - 1);
 				key[key_len] = 0;
 
@@ -244,7 +245,7 @@ static list_t *split_bind(const char* str) {
 
 		if (isgraph(*str)) {
 			// Just a regular character?
-			char* item = malloc(2);
+			char *item = malloc(2);
 			item[0] = *str;
 			item[1] = 0;
 			list_add(list, item);
