@@ -148,6 +148,9 @@ void add_default_bindings(struct bind *lbinds, struct bind *mbinds) {
 
 	bind_add(mbinds, "<Escape>", ":close-message<Enter>");
 	bind_add(mbinds, "q", ":close-message<Enter>");
+
+	bind_add(mbinds, "<Escape>", ":close-message<Enter>");
+	bind_add(mbinds, "q", ":close-message<Enter>");
 }
 
 static void init_bind_node(struct bind_node *bn) {
@@ -447,7 +450,7 @@ char* bind_input_buffer(struct bind *bind) {
 	return join_list(bind->keys, NULL);
 }
 
-static void clear_input_buffer(struct bind *bind) {
+void clear_input_buffer(struct bind *bind) {
 	free_flat_list(bind->keys);
 	bind->keys = create_list();
 }

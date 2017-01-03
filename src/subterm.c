@@ -19,6 +19,7 @@
 #include <termios.h>
 #include <unistd.h>
 
+#include "xkbcommon-keysyms.h"
 #include "render.h"
 #include "subterm.h"
 #include "state.h"
@@ -233,4 +234,90 @@ void subterm_tick() {
 		tsm_vte_input(account->viewer.vte, buf, r);
 	}
 	request_rerender(PANEL_MESSAGE_VIEW);
+}
+
+struct tb_to_xkb_map {
+	uint32_t tb_key;
+	uint32_t xkb_keysym;
+	uint32_t tsm_mods;
+};
+struct tb_to_xkb_map tb_to_xkb[] = {
+	{ TB_KEY_F1, XKB_KEY_F1, 0 },
+	{ TB_KEY_F2, XKB_KEY_F2, 0 },
+	{ TB_KEY_F3, XKB_KEY_F3, 0 },
+	{ TB_KEY_F4, XKB_KEY_F4, 0 },
+	{ TB_KEY_F5, XKB_KEY_F5, 0 },
+	{ TB_KEY_F6, XKB_KEY_F6, 0 },
+	{ TB_KEY_F7, XKB_KEY_F7, 0 },
+	{ TB_KEY_F8, XKB_KEY_F8, 0 },
+	{ TB_KEY_F9, XKB_KEY_F9, 0 },
+	{ TB_KEY_F9, XKB_KEY_F9, 0 },
+	{ TB_KEY_F10, XKB_KEY_F10, 0 },
+	{ TB_KEY_F11, XKB_KEY_F11, 0 },
+	{ TB_KEY_F12, XKB_KEY_F12, 0 },
+	{ TB_KEY_INSERT, XKB_KEY_Insert, 0 },
+	{ TB_KEY_DELETE, XKB_KEY_Delete, 0 },
+	{ TB_KEY_HOME, XKB_KEY_Home, 0 },
+	{ TB_KEY_END, XKB_KEY_End, 0 },
+	{ TB_KEY_PGUP, XKB_KEY_Page_Up, 0 },
+	{ TB_KEY_PGDN, XKB_KEY_Page_Down, 0 },
+	{ TB_KEY_ARROW_UP, XKB_KEY_Up, 0 },
+	{ TB_KEY_ARROW_DOWN, XKB_KEY_Down, 0 },
+	{ TB_KEY_ARROW_LEFT, XKB_KEY_Left, 0 },
+	{ TB_KEY_ARROW_RIGHT, XKB_KEY_Right, 0 },
+	{ TB_KEY_CTRL_2, XKB_KEY_2, TSM_CONTROL_MASK },
+	{ TB_KEY_CTRL_A, XKB_KEY_a, TSM_CONTROL_MASK },
+	{ TB_KEY_CTRL_B, XKB_KEY_b, TSM_CONTROL_MASK },
+	{ TB_KEY_CTRL_C, XKB_KEY_c, TSM_CONTROL_MASK },
+	{ TB_KEY_CTRL_D, XKB_KEY_d, TSM_CONTROL_MASK },
+	{ TB_KEY_CTRL_E, XKB_KEY_e, TSM_CONTROL_MASK },
+	{ TB_KEY_CTRL_F, XKB_KEY_f, TSM_CONTROL_MASK },
+	{ TB_KEY_CTRL_G, XKB_KEY_g, TSM_CONTROL_MASK },
+	{ TB_KEY_BACKSPACE, XKB_KEY_BackSpace, 0 },
+	{ TB_KEY_TAB, XKB_KEY_Tab, 0 },
+	{ TB_KEY_CTRL_J, XKB_KEY_J, TSM_CONTROL_MASK },
+	{ TB_KEY_CTRL_K, XKB_KEY_K, TSM_CONTROL_MASK },
+	{ TB_KEY_CTRL_L, XKB_KEY_L, TSM_CONTROL_MASK },
+	{ TB_KEY_ENTER, XKB_KEY_Return, 0 },
+	{ TB_KEY_CTRL_N, XKB_KEY_N, TSM_CONTROL_MASK },
+	{ TB_KEY_CTRL_O, XKB_KEY_O, TSM_CONTROL_MASK },
+	{ TB_KEY_CTRL_P, XKB_KEY_P, TSM_CONTROL_MASK },
+	{ TB_KEY_CTRL_Q, XKB_KEY_Q, TSM_CONTROL_MASK },
+	{ TB_KEY_CTRL_R, XKB_KEY_R, TSM_CONTROL_MASK },
+	{ TB_KEY_CTRL_S, XKB_KEY_S, TSM_CONTROL_MASK },
+	{ TB_KEY_CTRL_T, XKB_KEY_T, TSM_CONTROL_MASK },
+	{ TB_KEY_CTRL_U, XKB_KEY_U, TSM_CONTROL_MASK },
+	{ TB_KEY_CTRL_V, XKB_KEY_V, TSM_CONTROL_MASK },
+	{ TB_KEY_CTRL_W, XKB_KEY_W, TSM_CONTROL_MASK },
+	{ TB_KEY_CTRL_X, XKB_KEY_X, TSM_CONTROL_MASK },
+	{ TB_KEY_CTRL_Y, XKB_KEY_Y, TSM_CONTROL_MASK },
+	{ TB_KEY_CTRL_Z, XKB_KEY_Z, TSM_CONTROL_MASK },
+	{ TB_KEY_ESC, XKB_KEY_Escape, 0 },
+	{ TB_KEY_CTRL_4, XKB_KEY_4, TSM_CONTROL_MASK },
+	{ TB_KEY_CTRL_5, XKB_KEY_5, TSM_CONTROL_MASK },
+	{ TB_KEY_CTRL_6, XKB_KEY_6, TSM_CONTROL_MASK },
+	{ TB_KEY_CTRL_7, XKB_KEY_7, TSM_CONTROL_MASK },
+	{ TB_KEY_SPACE, XKB_KEY_space, 0 },
+};
+
+void subterm_handle_key(struct tsm_vte *vte, struct tb_event *event) {
+	if (event->key) {
+		for (size_t i = 0; i < sizeof(tb_to_xkb) / sizeof(tb_to_xkb[0]); ++i) {
+			if (tb_to_xkb[i].tb_key == event->key) {
+				uint32_t mods = tb_to_xkb[i].tsm_mods;
+				if ((event->mod & TB_MOD_ALT)) {
+					mods |= TSM_ALT_MASK;
+				}
+				tsm_vte_handle_keyboard(vte, tb_to_xkb[i].xkb_keysym,
+						event->ch, mods, event->ch);
+				return;
+			}
+		}
+	} else {
+		uint32_t mods = 0;
+		if ((event->mod & TB_MOD_ALT)) {
+			mods |= TSM_ALT_MASK;
+		}
+		tsm_vte_handle_keyboard(vte, 0, event->ch, mods, event->ch);
+	}
 }

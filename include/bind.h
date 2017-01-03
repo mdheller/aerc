@@ -37,4 +37,6 @@ char *bind_translate_key_event(struct tb_event *event);
 //return an event representing the key name, or NULL
 struct tb_event *bind_translate_key_name(const char *key);
 
+void clear_input_buffer(struct bind *bind);
+
 #endif

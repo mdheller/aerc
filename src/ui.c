@@ -392,6 +392,14 @@ static void pass_event_to_command(struct tb_event *event, aqueue_t *event_queue)
 			}
 			aqueue_enqueue(event_queue, new_event);
 		}
+	} else if (account->viewer.vte) {
+		// TODO: communicate from binding handler that we hit a nonexistent
+		// binding and flush all of the keys into the subterm, plus a timeout
+		clear_input_buffer(state->mbinds);
+		if (event->type == TB_EVENT_KEY) {
+			// TODO: pass through mouse events?
+			subterm_handle_key(account->viewer.vte, event);
+		}
 	}
 }
 
