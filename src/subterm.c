@@ -117,7 +117,7 @@ static void initialize_child(int comm[2], int fd) {
 	pty_send(comm[1], SHL_PTY_SETUP);
 	close(comm[1]);
 	setenv("TERM", "xterm-256color", 1);
-	char **argv = (char*[]){ "/usr/bin/vim" };
+	char **argv = (char*[]){ "/usr/bin/vim", NULL };
 	execve(argv[0], argv, environ);
 	exit(1);
 fail_slave:
@@ -163,6 +163,18 @@ static bool initialize_host(pid_t *out_pid, int *out_fd) {
 	return true;
 }
 
+void subterm_resize(unsigned short width, unsigned short height) {
+	struct account_state *account =
+		state->accounts->items[state->selected_account];
+	tsm_screen_resize(account->viewer.screen, width, height);
+
+	struct winsize ws = {
+		.ws_col = width,
+		.ws_row = height,
+	};
+	ioctl(account->viewer.fd, TIOCSWINSZ, &ws);
+}
+
 void initialize_subterm() {
 	worker_log(L_DEBUG, "Setting up subterm");
 	struct account_state *account =
@@ -183,7 +195,11 @@ void initialize_subterm() {
 }
 
 void cleanup_subterm() {
-	// TODO
+	struct account_state *account =
+		state->accounts->items[state->selected_account];
+	close(account->viewer.fd);
+	tsm_vte_unref(account->viewer.vte);
+	tsm_screen_unref(account->viewer.screen);
 }
 
 void subterm_tick() {

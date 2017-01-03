@@ -242,5 +242,4 @@ void render_message_view(struct geometry geo) {
 
 	struct account_state *account =
 		state->accounts->items[state->selected_account];
-	tsm_screen_resize(account->viewer.screen, geo.width, geo.height);
 }
