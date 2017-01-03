@@ -201,7 +201,6 @@ void initialize_subterm(const char *exe) {
 	account->viewer.clear = true;
 
 	request_rerender(PANEL_MESSAGE_VIEW);
-	// TODO: handle SIGCHLD
 }
 
 void cleanup_subterm() {
