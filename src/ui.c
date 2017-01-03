@@ -8,6 +8,7 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "util/time.h"
 #include "util/stringop.h"
 #include "util/list.h"
 #include "subterm.h"
@@ -468,6 +469,9 @@ static void process_event(struct tb_event* event, aqueue_t *event_queue) {
 }
 
 bool ui_tick() {
+	struct timespec now;
+	get_nanoseconds(&now);
+
 	struct geometry geo;
 	if (loading_indicators->length > 1) {
 		frame++;
@@ -514,8 +518,12 @@ bool ui_tick() {
 		subterm_tick();
 	}
 
-	if (state->rerender != PANEL_NONE) {
-		rerender();
+	// Rerender at 60 FPS max
+	if (now.tv_sec - state->last_draw.tv_sec >= 1 / 60.0) {
+		if (state->rerender != PANEL_NONE) {
+			rerender();
+			state->last_draw = now;
+		}
 	}
 
 	return !state->exit;

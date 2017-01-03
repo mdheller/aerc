@@ -41,6 +41,8 @@ struct account_state {
 	struct {
 		struct tsm_screen *screen;
 		struct tsm_vte *vte;
+		bool clear;
+		tsm_age_t age;
 		pid_t pid;
 		int fd;
 	} viewer;
@@ -51,6 +53,7 @@ struct account_state {
 };
 
 struct aerc_state {
+	struct timespec last_draw;
 	size_t selected_account;
 	list_t *accounts;
 	bool exit;
