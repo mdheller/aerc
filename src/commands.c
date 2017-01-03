@@ -62,6 +62,7 @@ static void handle_message_seek(char *cmd, int mul, int argc, char **argv) {
 		}
 	}
 	amt *= mul;
+	cleanup_subterm();
 	struct aerc_mailbox *mbox = get_aerc_mailbox(account, account->selected);
 	if (!mbox) {
 		return;
@@ -98,6 +99,7 @@ static void handle_select_message(int argc, char **argv) {
 		set_status(account, ACCOUNT_ERROR, "Usage: select-message [n]");
 		return;
 	}
+	cleanup_subterm();
 	struct aerc_mailbox *mbox = get_aerc_mailbox(account, account->selected);
 	if (!mbox) {
 		return;
@@ -129,6 +131,7 @@ static void handle_previous_account(int argc, char **argv) {
 static void handle_next_folder(int argc, char **argv) {
 	struct account_state *account =
 		state->accounts->items[state->selected_account];
+	cleanup_subterm();
 	int i = -1;
 	worker_log(L_DEBUG, "Current: %s", account->selected);
 	for (i = 0; i < (int)account->mailboxes->length; ++i) {
@@ -154,6 +157,7 @@ static void handle_next_folder(int argc, char **argv) {
 static void handle_previous_folder(int argc, char **argv) {
 	struct account_state *account =
 		state->accounts->items[state->selected_account];
+	cleanup_subterm();
 	int i = -1;
 	for (i = 0; i < (int)account->mailboxes->length; ++i) {
 		struct aerc_mailbox *mbox = account->mailboxes->items[i];
@@ -180,6 +184,7 @@ static void handle_previous_folder(int argc, char **argv) {
 static void handle_cd(int argc, char **argv) {
 	struct account_state *account =
 		state->accounts->items[state->selected_account];
+	cleanup_subterm();
 	char *joined = join_args(argv, argc);
 	worker_post_action(account->worker.pipe, WORKER_SELECT_MAILBOX,
 			NULL, joined);
@@ -225,6 +230,10 @@ static void handle_view_message(int argc, char **argv) {
 		state->accounts->items[state->selected_account];
 	if (argc != 0) {
 		set_status(account, ACCOUNT_ERROR, "Usage: view-message");
+		return;
+	}
+	if (account->viewer.vte) {
+		set_status(account, ACCOUNT_ERROR, "Message already open");
 		return;
 	}
 	initialize_subterm(config->ui.viewer_command);

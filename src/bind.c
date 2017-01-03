@@ -149,8 +149,11 @@ void add_default_bindings(struct bind *lbinds, struct bind *mbinds) {
 	bind_add(mbinds, "<Escape>", ":close-message<Enter>");
 	bind_add(mbinds, "q", ":close-message<Enter>");
 
-	bind_add(mbinds, "<Escape>", ":close-message<Enter>");
-	bind_add(mbinds, "q", ":close-message<Enter>");
+	bind_add(mbinds, "<Ctrl+h>", ":previous-mailbox<Enter>");
+	bind_add(mbinds, "<Left>", ":previous-mailbox<Enter>");
+
+	bind_add(mbinds, "<Ctrl+l>", ":next-mailbox<Enter>");
+	bind_add(mbinds, "<Right>", ":next-mailbox<Enter>");
 }
 
 static void init_bind_node(struct bind_node *bn) {

@@ -244,8 +244,10 @@ void rerender() {
 				tb_set_cursor(TB_HIDE_CURSOR, TB_HIDE_CURSOR);
 			} else {
 				tb_set_cursor(
-					tsm_screen_get_cursor_x(account->viewer.screen),
-					tsm_screen_get_cursor_y(account->viewer.screen));
+					state->panels.message_view.x +
+						tsm_screen_get_cursor_x(account->viewer.screen),
+					state->panels.message_view.y +
+						tsm_screen_get_cursor_y(account->viewer.screen));
 			}
 		} else {
 			tb_set_cursor(TB_HIDE_CURSOR, TB_HIDE_CURSOR);
