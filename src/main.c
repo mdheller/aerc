@@ -61,13 +61,16 @@ void handle_worker_message(struct account_state *account, struct worker_message 
 static void init_state() {
 	state = calloc(1, sizeof(struct aerc_state));
 	state->accounts = create_list();
-	state->binds = malloc(sizeof(struct bind));
-	init_bind(state->binds);
-	add_default_bindings(state->binds);
+	state->lbinds = malloc(sizeof(struct bind));
+	init_bind(state->lbinds);
+	state->mbinds = malloc(sizeof(struct bind));
+	init_bind(state->mbinds);
+	add_default_bindings(state->lbinds, state->mbinds);
 }
 
 static void cleanup_state() {
-	destroy_bind(state->binds);
+	destroy_bind(state->lbinds);
+	destroy_bind(state->mbinds);
 	free_flat_list(state->accounts);
 	free(state->command.text);
 	free(state);

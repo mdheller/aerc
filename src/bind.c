@@ -114,37 +114,40 @@ static const struct {
 	{"Ctrl+/", TB_KEY_CTRL_SLASH},
 };
 
-void add_default_bindings(struct bind *binds) {
-	bind_add(binds, "q", ":quit<Enter>");
-	bind_add(binds, "<Ctrl+c>", ":quit<Enter>");
+void add_default_bindings(struct bind *lbinds, struct bind *mbinds) {
+	bind_add(lbinds, "q", ":quit<Enter>");
+	bind_add(lbinds, "<Ctrl+c>", ":quit<Enter>");
 
-	bind_add(binds, "h", ":previous-mailbox<Enter>");
-	bind_add(binds, "<Left>", ":previous-mailbox<Enter>");
+	bind_add(lbinds, "h", ":previous-mailbox<Enter>");
+	bind_add(lbinds, "<Left>", ":previous-mailbox<Enter>");
 
-	bind_add(binds, "j", ":next-message<Enter>");
-	bind_add(binds, "<Down>", ":next-message<Enter>");
-	bind_add(binds, "<Ctrl+d>", ":next-message --scroll 50%<Enter>");
-	bind_add(binds, "<PageDown>", ":next-message --scroll 100%<Enter>");
-	bind_add(binds, "<WheelDown>", ":next-message --scroll 1<Enter>");
+	bind_add(lbinds, "j", ":next-message<Enter>");
+	bind_add(lbinds, "<Down>", ":next-message<Enter>");
+	bind_add(lbinds, "<Ctrl+d>", ":next-message --scroll 50%<Enter>");
+	bind_add(lbinds, "<PageDown>", ":next-message --scroll 100%<Enter>");
+	bind_add(lbinds, "<WheelDown>", ":next-message --scroll 1<Enter>");
 
-	bind_add(binds, "k", ":previous-message<Enter>");
-	bind_add(binds, "<Up>", ":previous-message<Enter>");
-	bind_add(binds, "<Ctrl+u>", ":previous-message --scroll 50%<Enter>");
-	bind_add(binds, "<PageUp>", ":previous-message --scroll 100%<Enter>");
-	bind_add(binds, "<WheelUp>", ":previous-message --scroll 1<Enter>");
+	bind_add(lbinds, "k", ":previous-message<Enter>");
+	bind_add(lbinds, "<Up>", ":previous-message<Enter>");
+	bind_add(lbinds, "<Ctrl+u>", ":previous-message --scroll 50%<Enter>");
+	bind_add(lbinds, "<PageUp>", ":previous-message --scroll 100%<Enter>");
+	bind_add(lbinds, "<WheelUp>", ":previous-message --scroll 1<Enter>");
 
-	bind_add(binds, "l", ":next-mailbox<Enter>");
-	bind_add(binds, "<Right>", ":next-mailbox<Enter>");
+	bind_add(lbinds, "l", ":next-mailbox<Enter>");
+	bind_add(lbinds, "<Right>", ":next-mailbox<Enter>");
 
-	bind_add(binds, "J", ":next-folder<Enter>");
-	bind_add(binds, "K", ":previous-folder<Enter>");
-	bind_add(binds, "g", ":select-message 0<Enter>");
-	bind_add(binds, "G", ":select-message -1<Enter>");
+	bind_add(lbinds, "J", ":next-folder<Enter>");
+	bind_add(lbinds, "K", ":previous-folder<Enter>");
+	bind_add(lbinds, "g", ":select-message 0<Enter>");
+	bind_add(lbinds, "G", ":select-message -1<Enter>");
 
-	bind_add(binds, "c", ":cd ");
+	bind_add(lbinds, "c", ":cd ");
 
-	bind_add(binds, "<Enter>", ":view-message<Enter>");
-	bind_add(binds, "<Space>", ":view-message<Enter>");
+	bind_add(lbinds, "<Enter>", ":view-message<Enter>");
+	bind_add(lbinds, "<Space>", ":view-message<Enter>");
+
+	bind_add(mbinds, "<Escape>", ":close-message<Enter>");
+	bind_add(mbinds, "q", ":close-message<Enter>");
 }
 
 static void init_bind_node(struct bind_node *bn) {

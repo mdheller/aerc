@@ -141,7 +141,11 @@ void render_status(struct geometry geo) {
 		return;
 	}
 
-	char *input = bind_input_buffer(state->binds);
+	struct account_state *account =
+		state->accounts->items[state->selected_account];
+
+	char *input = bind_input_buffer(
+		account->viewer.screen ? state->mbinds : state->lbinds);
 	if (strlen(input) > 0) {
 		render_partial_input(geo, input);
 		free(input);
@@ -149,8 +153,6 @@ void render_status(struct geometry geo) {
 	}
 	free(input);
 
-	struct account_state *account =
-		state->accounts->items[state->selected_account];
 	if (!account->status.text) return;
 
 	struct tb_cell cell;

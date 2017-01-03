@@ -70,7 +70,8 @@ struct aerc_state {
 		struct geometry message_view;
 		struct geometry status_bar;
 	} panels;
-	struct bind *binds;
+	struct bind *lbinds;
+	struct bind *mbinds;
 };
 
 extern struct aerc_state *state;

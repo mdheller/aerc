@@ -21,10 +21,10 @@ struct aerc_config {
 		char *index_format;
 		char *timestamp_format;
 		char *render_account_tabs;
-		char *border_style;
-		bool show_all_headers;
-		bool render_sidebar;
+		char *show_headers;
+		char *viewer_command;
 		int sidebar_width;
+		int preview_height;
 	} ui;
 	list_t *accounts;
 };

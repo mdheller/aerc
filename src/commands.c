@@ -227,7 +227,17 @@ static void handle_view_message(int argc, char **argv) {
 		set_status(account, ACCOUNT_ERROR, "Usage: view-message");
 		return;
 	}
-	initialize_subterm("less");
+	initialize_subterm(config->ui.viewer_command);
+}
+
+static void handle_close_message(int argc, char **argv) {
+	struct account_state *account =
+		state->accounts->items[state->selected_account];
+	if (argc != 0) {
+		set_status(account, ACCOUNT_ERROR, "Usage: view-message");
+		return;
+	}
+	cleanup_subterm();
 }
 
 struct cmd_handler {
@@ -238,6 +248,7 @@ struct cmd_handler {
 // Keep alphabetized, please
 struct cmd_handler cmd_handlers[] = {
 	{ "cd", handle_cd },
+	{ "close-message", handle_close_message },
 	{ "delete-mailbox", handle_delete_mailbox },
 	{ "exit", handle_quit },
 	{ "next-account", handle_next_account },

@@ -88,18 +88,20 @@ int handle_config_option(void *_config, const char *section,
 	struct aerc_config *config = _config;
 	worker_log(L_DEBUG, "Handling [%s]%s=%s", section, key, value);
 
+	/*
 	struct { const char *section; const char *key; bool *flag; } flags[] = {
-		{ "ui", "show-all-headers", &config->ui.show_all_headers },
-		{ "ui", "render-sidebar", &config->ui.render_sidebar }
 	};
+	*/
 	struct { const char *section; const char *key; char **string; } strings[] = {
 		{ "ui", "index-format", &config->ui.index_format },
 		{ "ui", "timestamp-format", &config->ui.timestamp_format },
 		{ "ui", "render-account-tabs", &config->ui.render_account_tabs },
-		{ "ui", "border-style", &config->ui.border_style }
+		{ "ui", "show-headers", &config->ui.show_headers },
+		{ "ui", "viewer-command", &config->ui.viewer_command },
 	};
 	struct { const char *section; const char *key; int *value; } integers[] = {
-		{ "ui", "sidebar-width", &config->ui.sidebar_width }
+		{ "ui", "sidebar-width", &config->ui.sidebar_width },
+		{ "ui", "preview-height", &config->ui.preview_height }
 	};
 	struct {
 		const char *section;
@@ -114,8 +116,10 @@ int handle_config_option(void *_config, const char *section,
 		return 1;
 	}
 
-	if (strcmp(section, "lbinds") == 0) {
-		enum bind_result result = bind_add(state->binds, key, value);
+	if (strcmp(section, "lbinds") == 0 || strcmp(section, "mbinds") == 0) {
+		enum bind_result result = bind_add(
+				strcmp(section, "lbinds") == 0 ? state->lbinds : state->mbinds,
+				key, value);
 		if (result == BIND_INVALID_KEYS) {
 			worker_log(L_ERROR, "Invalid bind key: %s", key);
 			return 0;
@@ -129,6 +133,7 @@ int handle_config_option(void *_config, const char *section,
 		return 1;
 	}
 
+	/*
 	for (size_t i = 0; i < sizeof(flags) / (sizeof(void *) * 3); ++i) {
 		if (strcmp(flags[i].section, section) == 0
 				&& strcmp(flags[i].key, key) == 0) {
@@ -143,6 +148,7 @@ int handle_config_option(void *_config, const char *section,
 			return 1;
 		}
 	}
+	*/
 
 	for (size_t i = 0; i < sizeof(strings) / (sizeof(void *) * 3); ++i) {
 		if (strcmp(strings[i].section, section) == 0
@@ -260,7 +266,10 @@ static void config_defaults(struct aerc_config *config) {
 	list_add(config->ui.loading_frames, strdup(" .. "));
 	config->ui.index_format = strdup("%4C %Z %D %-17.17n %s");
 	config->ui.timestamp_format = strdup("%F %l:%M %p");
-	config->ui.show_all_headers = false;
+	config->ui.show_headers = strdup("From,To,Cc,Bcc,Subject,Date");
+	config->ui.viewer_command = strdup("aerc-strip | aerc-highlight | less -R");
+	config->ui.sidebar_width = 20;
+	config->ui.preview_height = 12;
 }
 
 void free_config(struct aerc_config *config) {

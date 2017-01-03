@@ -207,6 +207,9 @@ void initialize_subterm(const char *exe) {
 void cleanup_subterm() {
 	struct account_state *account =
 		state->accounts->items[state->selected_account];
+	if (!account->viewer.screen) {
+		return;
+	}
 	close(account->viewer.fd);
 	tsm_vte_unref(account->viewer.vte);
 	tsm_screen_unref(account->viewer.screen);

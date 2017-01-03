@@ -377,7 +377,10 @@ static struct tb_event *parse_input_command(const char *input, size_t *consumed)
 }
 
 static void pass_event_to_command(struct tb_event *event, aqueue_t *event_queue) {
-	const char* command = bind_handle_key_event(state->binds, event);
+	struct account_state *account =
+		state->accounts->items[state->selected_account];
+	const char* command = bind_handle_key_event(
+		account->viewer.screen ? state->mbinds : state->lbinds, event);
 	if (command) {
 		size_t consumed = 0;
 		struct tb_event *new_event = NULL;
