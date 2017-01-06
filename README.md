@@ -30,6 +30,7 @@ aerc has, or at least *will have*, several advantages over mutt:
 
 Install dependencies:
 
+* libtsm
 * termbox
 * openssl (optional, for SSL support)
 * cmocka (optional, for tests)
