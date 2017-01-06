@@ -47,12 +47,29 @@ struct mailbox_flag {
 	bool permanent;
 };
 
+struct message_parameter {
+	char *key, *value;
+};
+
+struct message_part {
+	char *type;
+	char *subtype;
+	list_t *parameters;
+	char *body_id;
+	char *body_description;
+	char *body_encoding;
+	long size;
+	uint8_t *content;
+};
+
 struct mailbox_message {
 	bool fetching, populated;
 	int index;
 	long uid;
 	list_t *flags, *headers;
 	struct tm *internal_date;
+	char *multipart_type;
+	list_t *parts;
 };
 
 struct mailbox {

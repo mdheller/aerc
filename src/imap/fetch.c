@@ -97,6 +97,86 @@ static int handle_body(struct mailbox_message *msg, imap_arg_t *args) {
 	return 1; // We used one extra argument
 }
 
+static char *get_str(imap_arg_t *args) {
+	if (!args->str || strcmp(args->str, "NIL") == 0) {
+		return NULL;
+	}
+	return strdup(args->str);
+}
+
+static struct message_part *handle_message_part(imap_arg_t *args) {
+	struct message_part *part = calloc(sizeof(struct message_part), 1);
+	assert(part);
+	assert(args);
+	part->type = get_str(args);
+	args = args->next;
+
+	part->subtype = get_str(args);
+	args = args->next;
+
+	imap_arg_t *param = args->list;
+	part->parameters = create_list();
+	while (param) {
+		char *key = get_str(param);
+		param = param->next;
+		char *value = get_str(param);
+		param = param->next;
+		struct message_parameter *mparam = calloc(
+				sizeof(struct message_parameter), 1);
+		mparam->key = key;
+		mparam->value = value;
+		list_add(part->parameters, mparam);
+	}
+	args = args->next;
+
+	part->body_id = get_str(args);
+	args = args->next;
+
+	part->body_description = get_str(args);
+	args = args->next;
+
+	part->body_encoding = get_str(args);
+	args = args->next;
+
+	part->size = args->num;
+
+	worker_log(L_DEBUG, "Parsed message part: %s/%s, %s / %s / %s / %ld bytes",
+			part->type, part->subtype, part->body_id, part->body_description,
+			part->body_encoding, part->size);
+	return part;
+}
+
+static int handle_bodystructure(struct mailbox_message *msg, imap_arg_t *args) {
+	assert(args->type == IMAP_LIST);
+	if (!msg->parts) {
+		msg->parts = create_list();
+	} else {
+		for (size_t i = 0; i < msg->parts->length; ++i) {
+			struct message_part *p = msg->parts->items[i];
+			message_part_free(p);
+		}
+		list_free(msg->parts);
+		msg->parts = create_list();
+	}
+	if (args->list->type == IMAP_LIST) {
+		// Multipart
+		args = args->list;
+		while (args) {
+			struct message_part *part = handle_message_part(args->list);
+			list_add(msg->parts, part);
+			args = args->next;
+			if (args->type == IMAP_STRING) {
+				msg->multipart_type = get_str(args);
+				break;
+			}
+		}
+	} else {
+		struct message_part *part = handle_message_part(args->list);
+		list_add(msg->parts, part);
+	}
+	return 0;
+}
+
 void handle_imap_fetch(struct imap_connection *imap, const char *token,
 		const char *cmd, imap_arg_t *args) {
 	assert(args->type == IMAP_NUMBER);
@@ -118,8 +198,8 @@ void handle_imap_fetch(struct imap_connection *imap, const char *token,
 		{ "UID", IMAP_NUMBER, handle_uid },
 		{ "FLAGS", IMAP_LIST, handle_flags },
 		{ "INTERNALDATE", IMAP_STRING, handle_internaldate },
-		{ "BODY", IMAP_RESPONSE, handle_body }
-		// TODO: More fields, I guess
+		{ "BODY", IMAP_RESPONSE, handle_body },
+		{ "BODYSTRUCTURE", IMAP_LIST, handle_bodystructure },
 	};
 
 	while (args) {
@@ -128,9 +208,7 @@ void handle_imap_fetch(struct imap_connection *imap, const char *token,
 		if (!args) {
 			break;
 		}
-		for (size_t i = 0;
-				i < sizeof(handlers) / (sizeof(void *) * 2 + sizeof(enum imap_type));
-				++i) {
+		for (size_t i = 0; i < sizeof(handlers) / sizeof(handlers[0]); ++i) {
 			if (strcmp(handlers[i].name, name) == 0) {
 				assert(args->type == handlers[i].expected_type);
 				int j = handlers[i].handler(msg, args);

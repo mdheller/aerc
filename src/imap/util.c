@@ -54,12 +54,37 @@ struct mailbox_flag *mailbox_get_flag(struct imap_connection *imap,
 	return NULL;
 }
 
+void message_part_free(struct message_part *msg) {
+	if (!msg) {
+		return;
+	}
+	free(msg->type);
+	free(msg->subtype);
+	free(msg->body_id);
+	free(msg->body_description);
+	free(msg->body_encoding);
+	free(msg->content);
+	for (size_t i = 0; msg->parameters && i < msg->parameters->length; ++i) {
+		struct message_parameter *param = msg->parameters->items[i];
+		free(param->key);
+		free(param->value);
+		free(param);
+	}
+	list_free(msg->parameters);
+	free(msg);
+}
+
 void mailbox_message_free(struct mailbox_message *msg) {
-	for (size_t i = 0; i < msg->flags->length; ++i) {
+	for (size_t i = 0; msg->flags && i < msg->flags->length; ++i) {
 		char *f = msg->flags->items[i];
 		free(f);
 	}
 	list_free(msg->flags);
+	for (size_t i = 0; msg->parts && i < msg->parts->length; ++i) {
+		struct message_part *part = msg->parts->items[i];
+		message_part_free(part);
+	}
+	list_free(msg->parts);
 	free_headers(msg->headers);
 	free(msg->internal_date);
 	free(msg);
