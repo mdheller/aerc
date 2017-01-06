@@ -2,6 +2,7 @@
 #define _WORKER_H
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef USE_OPENSSL
 #include <openssl/ossl_typ.h>
@@ -46,7 +47,7 @@ enum worker_message_type {
 	WORKER_MAILBOX_UPDATED,
 	/* Messages */
 	WORKER_FETCH_MESSAGES,
-	WORKER_FETCH_MESSAGE_FULL,
+	WORKER_FETCH_MESSAGE_PART,
 	WORKER_MESSAGE_UPDATED,
 	/* Deleting things */
 	WORKER_DELETE_MAILBOX,
@@ -68,6 +69,11 @@ struct worker_message {
 	void *data;
 };
 
+struct fetch_part_request {
+	int index;
+	int part;
+};
+
 struct message_range {
 	int min, max;
 };
@@ -77,11 +83,21 @@ struct aerc_message_update {
 	struct aerc_message *message;
 };
 
+struct aerc_message_part {
+	char *type;
+	char *subtype;
+	char *body_id;
+	char *body_description;
+	char *body_encoding;
+	long size;
+	uint8_t *content; // Note: do not free this, you don't own it
+};
+
 struct aerc_message {
 	bool fetching, fetched;
 	int index;
 	long uid;
-	list_t *flags, *headers;
+	list_t *flags, *headers, *parts;
 	struct tm *internal_date;
 };
 

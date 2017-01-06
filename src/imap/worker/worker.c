@@ -65,6 +65,23 @@ struct aerc_message *serialize_message(struct mailbox_message *source) {
 	}
 	dest->internal_date = calloc(1, sizeof(struct tm));
 	memcpy(dest->internal_date, source->internal_date, sizeof(struct tm));
+	if (source->parts) {
+		dest->parts = create_list();
+		for (size_t i = 0; i < source->parts->length; ++i) {
+			struct message_part *spart = source->parts->items[i];
+			struct aerc_message_part *dpart =
+				calloc(sizeof(struct aerc_message_part), 1);
+			// TODO: parameters, if anyone gives a shit
+			if (spart->type) dpart->type = strdup(spart->type);
+			if (spart->subtype) dpart->subtype = strdup(spart->subtype);
+			if (spart->body_id) dpart->body_id = strdup(spart->body_id);
+			if (spart->body_description) dpart->body_description = strdup(spart->body_description);
+			if (spart->body_encoding) dpart->body_encoding = strdup(spart->body_encoding);
+			dpart->size = spart->size;
+			if (spart->content) dpart->content = spart->content; // Not duplicated
+			list_add(dest->parts, dpart);
+		}
+	}
 	return dest;
 }
 

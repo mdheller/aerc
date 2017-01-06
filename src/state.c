@@ -66,6 +66,16 @@ void free_aerc_mailbox(struct aerc_mailbox *mbox) {
 	free(mbox);
 }
 
+void free_aerc_message_part(struct aerc_message_part *part) {
+	if (!part) return;
+	free(part->type);
+	free(part->subtype);
+	free(part->body_id);
+	free(part->body_description);
+	free(part->body_encoding);
+	free(part);
+}
+
 void free_aerc_message(struct aerc_message *msg) {
 	if (!msg) return;
 	free_flat_list(msg->flags);
@@ -77,6 +87,13 @@ void free_aerc_message(struct aerc_message *msg) {
 		}
 	}
 	free_flat_list(msg->headers);
+	if (msg->parts) {
+		for (size_t i = 0; i < msg->parts->length; ++i) {
+			struct aerc_message_part *part = msg->parts->items[i];
+			free_aerc_message_part(part);
+		}
+		list_free(msg->parts);
+	}
 	free(msg);
 }
 
