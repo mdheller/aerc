@@ -29,6 +29,7 @@ void imap_fetch(struct imap_connection *imap, imap_callback_t callback,
 	struct mailbox *mbox = get_mailbox(imap, selected);
 	assert(min >= 1);
 	assert(max <= mbox->messages->length);
+	assert(min <= max);
 	for (size_t i = min; i < max; ++i) {
 		struct mailbox_message *msg = mbox->messages->items[i - 1];
 		if (msg->fetching) {
@@ -42,7 +43,11 @@ void imap_fetch(struct imap_connection *imap, imap_callback_t callback,
 	if (seperate && false) {
 		// TODO
 	} else {
-		imap_send(imap, callback, data, "FETCH %d:%d (%s)", min, max, what);
+		if (min == max) {
+			imap_send(imap, callback, data, "FETCH %d (%s)", min, what);
+		} else {
+			imap_send(imap, callback, data, "FETCH %d:%d (%s)", min, max, what);
+		}
 	}
 }
 
