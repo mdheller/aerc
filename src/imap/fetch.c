@@ -89,16 +89,38 @@ static int handle_internaldate(struct mailbox_message *msg, imap_arg_t *args) {
 static int handle_body(struct mailbox_message *msg, imap_arg_t *args) {
 	assert(args->type == IMAP_RESPONSE);
 	worker_log(L_DEBUG, "Handling message body fields");
-	/*
-	 * We get an IMAP_RESPONSE here, but we don't really care about it. We're
-	 * just going to parse the message body, which comes next.
-	 */
+	imap_arg_t *resp = calloc(1, sizeof(imap_arg_t));
+	int _;
+	imap_parse_args(args->str, resp, &_);
+	assert(_ == 2); // imap_parse_args expects \r\n, not present
 	args = args->next;
-	assert(args && args->type == IMAP_STRING);
-	list_t *headers = create_list();
-	parse_headers(args->str, headers);
-	free_headers(msg->headers);
-	msg->headers = headers;
+	assert(args);
+	switch (resp->type) {
+	case IMAP_ATOM:
+		if (strcmp(resp->str, "HEADER.FIELDS") == 0) {
+			list_t *headers = create_list();
+			parse_headers(args->str, headers);
+			free_headers(msg->headers);
+			msg->headers = headers;
+			worker_log(L_DEBUG, "Received message headers");
+		}
+		break;
+	case IMAP_NUMBER: {
+		size_t i = (size_t)resp->num - 1;
+		assert(msg->parts);
+		assert(i < msg->parts->length);
+		struct message_part *part = msg->parts->items[i];
+		free(part->content);
+		part->content = malloc(part->size);
+		memcpy(part->content, args->str, part->size);
+		worker_log(L_DEBUG, "Received message body");
+		break;
+	}
+	default:
+		// ¯\_(ツ)_/¯
+		break;
+	}
+	imap_arg_free(resp);
 	return 1; // We used one extra argument
 }
 

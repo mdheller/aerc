@@ -53,10 +53,10 @@ static char *parse_string(const char **str, int *remaining) {
 			return NULL;
 		}
 		(*str)++; // advance past }
-		if ((long)strlen(*str) < len) {
+		if ((long)strlen(*str) < len + 2) {
 			// We don't have the full string. Return the expected length of the
 			// string.
-			*remaining = (int)(len - strlen(*str));
+			*remaining = (int)(len - strlen(*str)) + 2;
 			while (**str) (*str)++;
 			return NULL;
 		}
@@ -64,7 +64,7 @@ static char *parse_string(const char **str, int *remaining) {
 		char *result = malloc(len + 1);
 		strncpy(result, *str, len);
 		result[len] = '\0';
-		*str += len;
+		*str += len + 2; // Add trailing \r\n
 		return result;
 	}
 	return NULL;

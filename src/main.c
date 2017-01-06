@@ -76,6 +76,8 @@ static void cleanup_state() {
 	free(state);
 }
 
+#include "internal/imap.h"
+
 int main(int argc, char **argv) {
 	init_state();
 	 // TODO: Customizable
