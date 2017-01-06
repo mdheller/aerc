@@ -34,7 +34,6 @@ void imap_fetch(struct imap_connection *imap, imap_callback_t callback,
 		struct mailbox_message *msg = mbox->messages->items[i - 1];
 		if (msg->fetching) {
 			seperate = true;
-			msg->fetching = true;
 			break;
 		}
 		msg->fetching = true;
