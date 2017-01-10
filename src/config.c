@@ -97,7 +97,8 @@ int handle_config_option(void *_config, const char *section,
 		{ "ui", "timestamp-format", &config->ui.timestamp_format },
 		{ "ui", "render-account-tabs", &config->ui.render_account_tabs },
 		{ "ui", "show-headers", &config->ui.show_headers },
-		{ "ui", "viewer-command", &config->ui.viewer_command },
+		{ "viewer", "pager", &config->viewer.pager },
+		// TODO: Other viewer stuff
 	};
 	struct { const char *section; const char *key; int *value; } integers[] = {
 		{ "ui", "sidebar-width", &config->ui.sidebar_width },
@@ -267,9 +268,14 @@ static void config_defaults(struct aerc_config *config) {
 	config->ui.index_format = strdup("%4C %Z %D %-17.17n %s");
 	config->ui.timestamp_format = strdup("%F %l:%M %p");
 	config->ui.show_headers = strdup("From,To,Cc,Bcc,Subject,Date");
-	config->ui.viewer_command = strdup("aerc-strip | aerc-highlight | less -R");
 	config->ui.sidebar_width = 20;
 	config->ui.preview_height = 12;
+
+	config->viewer.pager = strdup("less -R");
+	config->viewer.alternatives = create_list();
+	list_add(config->viewer.alternatives, "text/plain");
+	list_add(config->viewer.alternatives, "text/html");
+	config->viewer.mime_handlers = create_list();
 }
 
 void free_config(struct aerc_config *config) {

@@ -15,6 +15,11 @@ struct account_config {
 	list_t *extras;
 };
 
+struct mime_handler {
+	char *mimetype;
+	char *command;
+};
+
 struct aerc_config {
 	struct {
 		list_t *loading_frames;
@@ -22,10 +27,14 @@ struct aerc_config {
 		char *timestamp_format;
 		char *render_account_tabs;
 		char *show_headers;
-		char *viewer_command;
 		int sidebar_width;
 		int preview_height;
 	} ui;
+	struct {
+		list_t *mime_handlers;
+		list_t *alternatives;
+		char *pager;
+	} viewer;
 	list_t *accounts;
 };
 

@@ -249,7 +249,7 @@ static void handle_view_message(int argc, char **argv) {
 	}
 	account->viewer.msg = mbox->messages->items[account->ui.selected_message];
 	// TODO: fetch message parts
-	account->viewer.st = initialize_subterm(config->ui.viewer_command);
+	account->viewer.st = initialize_subterm(config->viewer.pager);
 }
 
 static void handle_close_message(int argc, char **argv) {
