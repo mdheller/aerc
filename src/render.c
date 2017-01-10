@@ -261,11 +261,16 @@ static int tsm_draw_cb(struct tsm_screen *con,uint32_t id, const uint32_t *ch,
 void render_message_view(struct geometry geo) {
 	struct account_state *account =
 		state->accounts->items[state->selected_account];
+	struct tb_cell cell = {
+		.fg = TB_DEFAULT,
+		.bg = TB_DEFAULT,
+	};
+	if (!account->viewer.st) {
+		clear_remaining(&cell, geo);
+		add_loading(geo);
+		return;
+	}
 	if (account->viewer.st->clear) {
-		struct tb_cell cell = {
-			.fg = TB_DEFAULT,
-			.bg = TB_DEFAULT,
-		};
 		clear_remaining(&cell, geo);
 		account->viewer.st->clear = false;
 	}

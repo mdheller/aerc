@@ -25,4 +25,6 @@ void handle_worker_message_updated(struct account_state *account,
 void handle_worker_mailbox_deleted(struct account_state *account,
 		struct worker_message *message);
 
+void load_message_viewer(struct account_state *account);
+
 #endif

@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 #include "util/stringop.h"
+#include "handlers.h"
 #include "commands.h"
 #include "subterm.h"
 #include "config.h"
@@ -247,16 +248,17 @@ static void handle_view_message(int argc, char **argv) {
 		set_status(account, ACCOUNT_ERROR, "Failed to read mailbox");
 		return;
 	}
-	account->viewer.msg = mbox->messages->items[account->ui.selected_message];
-	// TODO: fetch message parts
-	account->viewer.st = initialize_subterm(config->viewer.pager);
+	account->viewer.msg = mbox->messages->items[
+		mbox->messages->length - account->ui.selected_message - 1];
+	load_message_viewer(account);
+	request_rerender(PANEL_MESSAGE_VIEW);
 }
 
 static void handle_close_message(int argc, char **argv) {
 	struct account_state *account =
 		state->accounts->items[state->selected_account];
 	if (argc != 0) {
-		set_status(account, ACCOUNT_ERROR, "Usage: view-message");
+		set_status(account, ACCOUNT_ERROR, "Usage: close-message");
 		return;
 	}
 	close_message(account);

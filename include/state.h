@@ -5,6 +5,7 @@
 #include <pthread.h>
 #include <time.h>
 #include <libtsm.h>
+#include <poll.h>
 
 #include "bind.h"
 #include "util/list.h"
@@ -18,6 +19,17 @@ enum account_status {
 
 struct geometry {
 	int x, y, width, height;
+};
+
+struct message_renderer {
+	pid_t pid;
+	int pipe[2];
+	struct pollfd poll[1];
+	size_t output_len;
+	size_t output_size;
+	uint8_t *output;
+	size_t input_size;
+	uint8_t *input;
 };
 
 struct account_state {
@@ -41,6 +53,7 @@ struct account_state {
 	struct {
 		struct aerc_message *msg;
 		struct subterm *st;
+		list_t *renderers;
 	} viewer;
 
 	char *name;

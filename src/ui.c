@@ -7,10 +7,13 @@
 #include <termbox.h>
 #include <string.h>
 #include <ctype.h>
+#include <sys/wait.h>
+#include <errno.h>
 
 #include "util/time.h"
 #include "util/stringop.h"
 #include "util/list.h"
+#include "handlers.h"
 #include "subterm.h"
 #include "commands.h"
 #include "config.h"
@@ -238,7 +241,7 @@ void rerender() {
 	if (state->command.text) {
 		tb_set_cursor(config->ui.sidebar_width + strlen(state->command.text) + 1, height - 1);
 	} else {
-		if (account->viewer.msg) {
+		if (account->viewer.st) {
 			unsigned int flags = tsm_screen_get_flags(account->viewer.st->screen);
 			if ((flags & TSM_SCREEN_HIDE_CURSOR)) {
 				tb_set_cursor(TB_HIDE_CURSOR, TB_HIDE_CURSOR);
@@ -529,6 +532,41 @@ bool ui_tick() {
 			account->viewer.msg = NULL;
 			account->viewer.st = NULL;
 			request_rerender(PANEL_MESSAGE_LIST);
+		}
+	}
+
+	if (account->viewer.renderers) {
+		for (size_t i = 0; i < account->viewer.renderers->length; ++i) {
+			struct message_renderer *r = account->viewer.renderers->items[i];
+			if (r->input_size > 0) {
+				size_t amt = r->input_size < 1024 ? r->input_size : 1024;
+				int written = write(r->pipe[0], r->input, amt);
+				worker_log(L_DEBUG, "Wrote %d of %zd bytes to child (errno: %d)", written, amt, errno);
+				if (written > 0) {
+					r->input_size -= written;
+					r->input += written;
+					if (r->input_size == 0) {
+						close(r->pipe[0]);
+					}
+				}
+			}
+			int amt = read(r->pipe[1], &r->output[r->output_len], r->output_size - r->output_len);
+			worker_log(L_DEBUG, "Read %d bytes from child", amt);
+			if (amt == -1) {
+				if (errno != EAGAIN) {
+					close(r->pipe[0]);
+					close(r->pipe[1]);
+					load_message_viewer(account);
+				}
+			} else {
+				r->output_len += amt;
+				if (r->output_len >= r->output_size) {
+					uint8_t *new = realloc(r->output, r->output_size + 1024);
+					// TODO: OOM handling
+					r->output_size = r->output_size + 1024;
+					r->output = new;
+				}
+			}
 		}
 	}
 
