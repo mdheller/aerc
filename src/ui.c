@@ -221,7 +221,7 @@ void rerender() {
 	}
 
 	if (state->rerender & (PANEL_MESSAGE_VIEW | PANEL_MESSAGE_LIST | PANEL_ALL)
-			&& account->viewer.screen) {
+			&& account->viewer.msg) {
 		rerender_message_view();
 	} else {
 		reset_fetches();
@@ -238,16 +238,16 @@ void rerender() {
 	if (state->command.text) {
 		tb_set_cursor(config->ui.sidebar_width + strlen(state->command.text) + 1, height - 1);
 	} else {
-		if (account->viewer.screen) {
-			unsigned int flags = tsm_screen_get_flags(account->viewer.screen);
+		if (account->viewer.msg) {
+			unsigned int flags = tsm_screen_get_flags(account->viewer.st->screen);
 			if ((flags & TSM_SCREEN_HIDE_CURSOR)) {
 				tb_set_cursor(TB_HIDE_CURSOR, TB_HIDE_CURSOR);
 			} else {
 				tb_set_cursor(
 					state->panels.message_view.x +
-						tsm_screen_get_cursor_x(account->viewer.screen),
+						tsm_screen_get_cursor_x(account->viewer.st->screen),
 					state->panels.message_view.y +
-						tsm_screen_get_cursor_y(account->viewer.screen));
+						tsm_screen_get_cursor_y(account->viewer.st->screen));
 			}
 		} else {
 			tb_set_cursor(TB_HIDE_CURSOR, TB_HIDE_CURSOR);
@@ -382,7 +382,7 @@ static void pass_event_to_command(struct tb_event *event, aqueue_t *event_queue)
 	struct account_state *account =
 		state->accounts->items[state->selected_account];
 	const char* command = bind_handle_key_event(
-		account->viewer.screen ? state->mbinds : state->lbinds, event);
+		account->viewer.msg ? state->mbinds : state->lbinds, event);
 	if (command) {
 		size_t consumed = 0;
 		struct tb_event *new_event = NULL;
@@ -394,13 +394,13 @@ static void pass_event_to_command(struct tb_event *event, aqueue_t *event_queue)
 			}
 			aqueue_enqueue(event_queue, new_event);
 		}
-	} else if (account->viewer.vte) {
+	} else if (account->viewer.st) {
 		// TODO: communicate from binding handler that we hit a nonexistent
 		// binding and flush all of the keys into the subterm, plus a timeout
 		clear_input_buffer(state->mbinds);
 		if (event->type == TB_EVENT_KEY) {
 			// TODO: pass through mouse events?
-			subterm_handle_key(account->viewer.vte, event);
+			subterm_handle_key(account->viewer.st->vte, event);
 		}
 	}
 }
@@ -524,8 +524,12 @@ bool ui_tick() {
 	struct account_state *account =
 		state->accounts->items[state->selected_account];
 
-	if (account->viewer.screen) {
-		subterm_tick();
+	if (account->viewer.st) {
+		if (subterm_tick(account->viewer.st)) {
+			account->viewer.msg = NULL;
+			account->viewer.st = NULL;
+			request_rerender(PANEL_MESSAGE_LIST);
+		}
 	}
 
 	if (state->rerender != PANEL_NONE) {

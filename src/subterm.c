@@ -160,16 +160,14 @@ static bool initialize_host(pid_t *out_pid, int *out_fd, const char *exe) {
 	return true;
 }
 
-void subterm_resize(unsigned short width, unsigned short height) {
-	struct account_state *account =
-		state->accounts->items[state->selected_account];
-	tsm_screen_resize(account->viewer.screen, width, height);
+void subterm_resize(struct subterm *st, unsigned short width, unsigned short height) {
+	tsm_screen_resize(st->screen, width, height);
 
 	struct winsize ws = {
 		.ws_col = width,
 		.ws_row = height,
 	};
-	ioctl(account->viewer.fd, TIOCSWINSZ, &ws);
+	ioctl(st->fd, TIOCSWINSZ, &ws);
 }
 
 static void subterm_log(void *data, const char *file, int line, const char *func,
@@ -179,61 +177,58 @@ static void subterm_log(void *data, const char *file, int line, const char *func
 
 static void subterm_write(struct tsm_vte *vte, const char *u8,
 		size_t len, void *data) {
-	struct account_state *account =
-		state->accounts->items[state->selected_account];
-	write(account->viewer.fd, u8, len);
+	struct subterm *st = data;
+	write(st->fd, u8, len);
 	request_rerender(PANEL_MESSAGE_VIEW);
 }
 
-void initialize_subterm(const char *exe) {
+struct subterm *initialize_subterm(const char *exe) {
 	worker_log(L_DEBUG, "Setting up subterm");
-	struct account_state *account =
-		state->accounts->items[state->selected_account];
-	tsm_screen_new(&account->viewer.screen, subterm_log, NULL);
-	tsm_screen_resize(account->viewer.screen, 80, 24);
-	tsm_vte_new(&account->viewer.vte,
-			account->viewer.screen, subterm_write, NULL, subterm_log, NULL);
+	struct subterm *st = calloc(sizeof(struct subterm), 1);
+	tsm_screen_new(&st->screen, subterm_log, st);
+	tsm_screen_resize(st->screen, 80, 24);
+	tsm_vte_new(&st->vte, st->screen, subterm_write, st, subterm_log, st);
 
-	if (!initialize_host(&account->viewer.pid, &account->viewer.fd, exe)) {
+	if (!initialize_host(&st->pid, &st->fd, exe)) {
+		struct account_state *account =
+			state->accounts->items[state->selected_account];
 		set_status(account, ACCOUNT_ERROR, "Error initializing terminal");
-		return;
+		return NULL;
 	}
 
-	account->viewer.clear = true;
-
+	st->clear = true;
 	request_rerender(PANEL_MESSAGE_VIEW);
+	return st;
 }
 
-void cleanup_subterm() {
-	struct account_state *account =
-		state->accounts->items[state->selected_account];
-	if (!account->viewer.screen) {
+void cleanup_subterm(struct subterm **st) {
+	if (!st || !*st) {
 		return;
 	}
-	close(account->viewer.fd);
-	tsm_vte_unref(account->viewer.vte);
-	tsm_screen_unref(account->viewer.screen);
-	account->viewer.vte = NULL;
-	account->viewer.screen = NULL;
+
+	close((*st)->fd);
+	tsm_vte_unref((*st)->vte);
+	tsm_screen_unref((*st)->screen);
+	free(*st);
+	*st = 0;
 
 	request_rerender(PANEL_ALL);
 }
 
-void subterm_tick() {
-	struct account_state *account =
-		state->accounts->items[state->selected_account];
+bool subterm_tick(struct subterm *st) {
 	static char buf[1024];
-	int r = read(account->viewer.fd, &buf, sizeof(buf));
+	int r = read(st->fd, &buf, sizeof(buf));
 	if (r == -1) {
 		if (errno != EAGAIN) {
-			cleanup_subterm();
-			return;
+			cleanup_subterm(&st);
+			return true;
 		}
 	}
 	if (r > 0) {
-		tsm_vte_input(account->viewer.vte, buf, r);
+		tsm_vte_input(st->vte, buf, r);
 	}
 	request_rerender(PANEL_MESSAGE_VIEW);
+	return false;
 }
 
 struct tb_to_xkb_map {
@@ -241,6 +236,7 @@ struct tb_to_xkb_map {
 	uint32_t xkb_keysym;
 	uint32_t tsm_mods;
 };
+
 struct tb_to_xkb_map tb_to_xkb[] = {
 	{ TB_KEY_F1, XKB_KEY_F1, 0 },
 	{ TB_KEY_F2, XKB_KEY_F2, 0 },

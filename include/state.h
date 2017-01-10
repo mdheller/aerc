@@ -39,12 +39,8 @@ struct account_state {
 	} ui;
 	
 	struct {
-		struct tsm_screen *screen;
-		struct tsm_vte *vte;
-		bool clear;
-		tsm_age_t age;
-		pid_t pid;
-		int fd;
+		struct aerc_message *msg;
+		struct subterm *st;
 	} viewer;
 
 	char *name;

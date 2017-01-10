@@ -12,6 +12,12 @@
 #include "log.h"
 #include "ui.h"
 
+static void close_message(struct account_state *account) {
+	cleanup_subterm(&account->viewer.st);
+	account->viewer.msg = NULL;
+	request_rerender(PANEL_MESSAGE_LIST);
+}
+
 static void scroll_selected_into_view() {
 	struct account_state *account =
 		state->accounts->items[state->selected_account];
@@ -62,7 +68,7 @@ static void handle_message_seek(char *cmd, int mul, int argc, char **argv) {
 		}
 	}
 	amt *= mul;
-	cleanup_subterm();
+	close_message(account);
 	struct aerc_mailbox *mbox = get_aerc_mailbox(account, account->selected);
 	if (!mbox) {
 		return;
@@ -99,7 +105,7 @@ static void handle_select_message(int argc, char **argv) {
 		set_status(account, ACCOUNT_ERROR, "Usage: select-message [n]");
 		return;
 	}
-	cleanup_subterm();
+	close_message(account);
 	struct aerc_mailbox *mbox = get_aerc_mailbox(account, account->selected);
 	if (!mbox) {
 		return;
@@ -131,7 +137,7 @@ static void handle_previous_account(int argc, char **argv) {
 static void handle_next_folder(int argc, char **argv) {
 	struct account_state *account =
 		state->accounts->items[state->selected_account];
-	cleanup_subterm();
+	close_message(account);
 	int i = -1;
 	worker_log(L_DEBUG, "Current: %s", account->selected);
 	for (i = 0; i < (int)account->mailboxes->length; ++i) {
@@ -157,7 +163,7 @@ static void handle_next_folder(int argc, char **argv) {
 static void handle_previous_folder(int argc, char **argv) {
 	struct account_state *account =
 		state->accounts->items[state->selected_account];
-	cleanup_subterm();
+	close_message(account);
 	int i = -1;
 	for (i = 0; i < (int)account->mailboxes->length; ++i) {
 		struct aerc_mailbox *mbox = account->mailboxes->items[i];
@@ -184,7 +190,7 @@ static void handle_previous_folder(int argc, char **argv) {
 static void handle_cd(int argc, char **argv) {
 	struct account_state *account =
 		state->accounts->items[state->selected_account];
-	cleanup_subterm();
+	close_message(account);
 	char *joined = join_args(argv, argc);
 	worker_post_action(account->worker.pipe, WORKER_SELECT_MAILBOX,
 			NULL, joined);
@@ -232,11 +238,18 @@ static void handle_view_message(int argc, char **argv) {
 		set_status(account, ACCOUNT_ERROR, "Usage: view-message");
 		return;
 	}
-	if (account->viewer.vte) {
+	if (account->viewer.msg) {
 		set_status(account, ACCOUNT_ERROR, "Message already open");
 		return;
 	}
-	initialize_subterm(config->ui.viewer_command);
+	struct aerc_mailbox *mbox = get_aerc_mailbox(account, account->selected);
+	if (!mbox) {
+		set_status(account, ACCOUNT_ERROR, "Failed to read mailbox");
+		return;
+	}
+	account->viewer.msg = mbox->messages->items[account->ui.selected_message];
+	// TODO: fetch message parts
+	account->viewer.st = initialize_subterm(config->ui.viewer_command);
 }
 
 static void handle_close_message(int argc, char **argv) {
@@ -246,7 +259,7 @@ static void handle_close_message(int argc, char **argv) {
 		set_status(account, ACCOUNT_ERROR, "Usage: view-message");
 		return;
 	}
-	cleanup_subterm();
+	close_message(account);
 }
 
 struct cmd_handler {

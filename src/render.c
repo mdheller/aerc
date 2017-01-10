@@ -145,7 +145,7 @@ void render_status(struct geometry geo) {
 		state->accounts->items[state->selected_account];
 
 	char *input = bind_input_buffer(
-		account->viewer.screen ? state->mbinds : state->lbinds);
+		account->viewer.msg ? state->mbinds : state->lbinds);
 	if (strlen(input) > 0) {
 		render_partial_input(geo, input);
 		free(input);
@@ -242,7 +242,7 @@ static int tsm_draw_cb(struct tsm_screen *con,uint32_t id, const uint32_t *ch,
 	struct geometry *geo = data;
 	struct account_state *account =
 		state->accounts->items[state->selected_account];
-	if (account->viewer.age >= age) {
+	if (account->viewer.st->age >= age) {
 		return 0;
 	}
 	// TODO: handle colors
@@ -261,14 +261,14 @@ static int tsm_draw_cb(struct tsm_screen *con,uint32_t id, const uint32_t *ch,
 void render_message_view(struct geometry geo) {
 	struct account_state *account =
 		state->accounts->items[state->selected_account];
-	if (account->viewer.clear) {
+	if (account->viewer.st->clear) {
 		struct tb_cell cell = {
 			.fg = TB_DEFAULT,
 			.bg = TB_DEFAULT,
 		};
 		clear_remaining(&cell, geo);
-		account->viewer.clear = false;
+		account->viewer.st->clear = false;
 	}
-	subterm_resize(geo.width, geo.height);
-	account->viewer.age = tsm_screen_draw(account->viewer.screen, tsm_draw_cb, &geo);
+	subterm_resize(account->viewer.st, geo.width, geo.height);
+	account->viewer.st->age = tsm_screen_draw(account->viewer.st->screen, tsm_draw_cb, &geo);
 }
