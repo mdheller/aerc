@@ -69,10 +69,6 @@ int parse_headers(const char *headers, list_t *output) {
 	while (*headers && strstr(headers, "\r\n") == headers) {
 		headers += 2;
 	}
-	if (strstr(headers, "From: \"United") == headers) {
-		headers++;
-		headers--;
-	}
 	while (*headers) {
 		char *crlf = strstr(headers, "\r\n");
 		char *null = strchr(headers, '\0');
