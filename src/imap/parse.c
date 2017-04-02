@@ -79,7 +79,7 @@ static char *parse_atom(const char **str) {
 	 * string.
 	 */
 	char *end = NULL;
-	char *delims = " )[\r";
+	char delims[] = " )[\r";
 	for (size_t i = 0; i < sizeof(delims) - 1; ++i) {
 		char *_ = strchr(*str, delims[i]);
 		if (_ && (!end || _ < end)) end = _;

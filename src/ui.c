@@ -58,7 +58,7 @@ int tb_printf(int x, int y, struct tb_cell *basis, const char *fmt, ...) {
 	int l = 0;
 	int _x = x, _y = y;
 	char *b = buf;
-	while (*b) {
+	while (b < buf + len + 1 && *b) {
 		b += tb_utf8_char_to_unicode(&basis->ch, b);
 		++l;
 		switch (basis->ch) {
