@@ -172,6 +172,24 @@ static struct message_part *handle_message_part(imap_arg_t *args) {
 	return part;
 }
 
+static void extract_parts(struct mailbox_message *msg, imap_arg_t *args) {
+	if (args->type == IMAP_LIST) {
+		// Multipart
+		args = args->list;
+		while (args) {
+			extract_parts(msg, args);
+			args = args->next;
+			if (args->type == IMAP_STRING) {
+				msg->multipart_type = get_str(args);
+				break;
+			}
+		}
+	} else {
+		struct message_part *part = handle_message_part(args);
+		list_add(msg->parts, part);
+	}
+}
+
 static int handle_bodystructure(struct mailbox_message *msg, imap_arg_t *args) {
 	assert(args->type == IMAP_LIST);
 	if (!msg->parts) {
@@ -184,22 +202,7 @@ static int handle_bodystructure(struct mailbox_message *msg, imap_arg_t *args) {
 		list_free(msg->parts);
 		msg->parts = create_list();
 	}
-	if (args->list->type == IMAP_LIST) {
-		// Multipart
-		args = args->list;
-		while (args) {
-			struct message_part *part = handle_message_part(args->list);
-			list_add(msg->parts, part);
-			args = args->next;
-			if (args->type == IMAP_STRING) {
-				msg->multipart_type = get_str(args);
-				break;
-			}
-		}
-	} else {
-		struct message_part *part = handle_message_part(args->list);
-		list_add(msg->parts, part);
-	}
+	extract_parts(msg, args->list);
 	return 0;
 }
 
