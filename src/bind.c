@@ -240,7 +240,7 @@ static list_t *split_bind(const char* str) {
 				const size_t key_len = end - str;
 				char *key = malloc(key_len);
 				memcpy(key, str + 1 /* skip the '<' */, key_len - 1);
-				key[key_len] = 0;
+				key[key_len - 1] = 0;
 
 				if (is_valid_special_key(key)) {
 					list_add(list, key);
