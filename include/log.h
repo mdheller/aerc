@@ -29,7 +29,7 @@ void _worker_vlog(const char *filename, int line, enum log_level level,
 #define worker_vlog(VERBOSITY, FMT, ARGS) \
 	_worker_vlog(__FILE__, __LINE__, VERBOSITY, FMT, ARGS)
 #else
-void _worker_log(enum log_level level, const char* format, va_list ap);
+void _worker_vlog(enum log_level level, const char* format, va_list ap);
 #define worker_vlog(VERBOSITY, FMT, ARGS) \
 	_worker_vlog(VERBOSITY, FMT, ARGS)
 #endif
