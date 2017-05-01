@@ -541,13 +541,16 @@ bool ui_tick() {
 			if (r->input_size > 0) {
 				size_t amt = r->input_size < 1024 ? r->input_size : 1024;
 				int written = write(r->pipe[0], r->input, amt);
-				worker_log(L_DEBUG, "Wrote %d of %zd bytes to child (errno: %d)", written, amt, errno);
 				if (written > 0) {
+					worker_log(L_DEBUG, "Wrote %d of %zd bytes to child", written, amt);
 					r->input_size -= written;
 					r->input += written;
 					if (r->input_size == 0) {
 						close(r->pipe[0]);
 					}
+				} else {
+					worker_log(L_DEBUG, "Error %d writing to child", errno);
+					// TODO: Anything else?
 				}
 			}
 			int amt = read(r->pipe[1], &r->output[r->output_len], r->output_size - r->output_len);
@@ -566,6 +569,15 @@ bool ui_tick() {
 					r->output_size = r->output_size + 1024;
 					r->output = new;
 				}
+			}
+			int w;
+			waitpid(r->pid, &w, WNOHANG);
+			if (WIFEXITED(w)) {
+				close(r->pipe[0]);
+				close(r->pipe[1]);
+				load_message_viewer(account);
+				// TODO: Free all of the resources
+				break;
 			}
 		}
 	}

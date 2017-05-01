@@ -108,23 +108,33 @@ void handle_worker_mailbox_updated(struct account_state *account,
 
 static struct message_renderer *exec_renderer(const char *exec,
 		uint8_t *input, size_t input_len) {
-	int comm[2];
-	if (pipe(comm) < 0) {
+	int stdin_pipe[2], stdout_pipe[2];
+	if (pipe(stdin_pipe) < 0) {
 		return NULL;
 	}
-	fcntl(comm[0], FD_CLOEXEC);
-	fcntl(comm[1], FD_CLOEXEC);
-	int flags = fcntl(comm[0], F_GETFL, 0);
-	fcntl(comm[0], F_SETFL, flags | O_NONBLOCK);
+	if (pipe(stdout_pipe) < 0) {
+		return NULL;
+	}
+	int flags = fcntl(stdin_pipe[1], F_GETFL, 0);
+	fcntl(stdin_pipe[1], F_SETFL, flags | O_NONBLOCK);
+	flags = fcntl(stdout_pipe[0], F_GETFL, 0);
+	fcntl(stdout_pipe[0], F_SETFL, flags | O_NONBLOCK);
 	pid_t child = fork();
 	if (child < 0) {
-		close(comm[0]);
-		close(comm[1]);
+		worker_log(L_DEBUG, "fork() failed (%d)", errno);
+		close(stdin_pipe[0]);
+		close(stdin_pipe[1]);
+		close(stdout_pipe[0]);
+		close(stdout_pipe[1]);
 		return NULL;
 	} else if (!child) {
 		// child
-		dup2(comm[0], STDIN_FILENO);
-		dup2(comm[1], STDOUT_FILENO);
+		dup2(stdin_pipe[0], STDIN_FILENO);
+		dup2(stdout_pipe[1], STDOUT_FILENO);
+		close(stdin_pipe[0]);
+		close(stdin_pipe[1]);
+		close(stdout_pipe[0]);
+		close(stdout_pipe[1]);
 
 		char **argv = (char*[]){ strdup(exec), NULL };
 		execvp(argv[0], argv);
@@ -133,14 +143,16 @@ static struct message_renderer *exec_renderer(const char *exec,
 		// parent
 		struct message_renderer *r = calloc(sizeof(struct message_renderer), 1);
 		r->pid = child;
-		r->pipe[0] = comm[0];
-		r->pipe[1] = comm[1];
+		close(stdin_pipe[0]);
+		close(stdout_pipe[1]);
+		r->pipe[0] = stdin_pipe[1];
+		r->pipe[1] = stdout_pipe[0];
 		r->output_len = 0;
 		r->output_size = 256;
 		r->output = malloc(r->output_size);
 		r->input = input;
 		r->input_size = input_len;
-		r->poll[0].fd = comm[1];
+		r->poll[0].fd = stdin_pipe[1];
 		r->poll[0].events = POLLIN;
 		return r;
 	}
