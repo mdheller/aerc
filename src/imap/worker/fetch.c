@@ -28,6 +28,7 @@ void handle_worker_fetch_message_part(struct worker_pipe *pipe,
 	struct imap_connection *imap = pipe->data;
 	struct fetch_part_request *request = message->data;
 	++request->index; // IMAP is 1 indexed
+	++request->part;
 
 	const char *fmt = "BODY.PEEK[%d]";
 	int len = snprintf(NULL, 0, fmt, request->part);

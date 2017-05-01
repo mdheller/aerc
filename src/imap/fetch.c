@@ -105,7 +105,7 @@ static int handle_body(struct mailbox_message *msg, imap_arg_t *args) {
 		}
 		break;
 	case IMAP_NUMBER: {
-		size_t i = resp->num;
+		size_t i = resp->num - 1;
 		assert(msg->parts);
 		assert(i < msg->parts->length);
 		struct message_part *part = msg->parts->items[i];
