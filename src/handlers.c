@@ -8,16 +8,13 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <poll.h>
-
 #include "config.h"
 #include "log.h"
 #include "state.h"
 #include "ui.h"
 #include "util/list.h"
 #include "worker.h"
+#include "subprocess.h"
 
 void handle_worker_connect_done(struct account_state *account,
 		struct worker_message *message) {
@@ -106,58 +103,6 @@ void handle_worker_mailbox_updated(struct account_state *account,
 	request_rerender(PANEL_MESSAGE_LIST | PANEL_SIDEBAR);
 }
 
-static struct message_renderer *exec_renderer(const char *exec,
-		uint8_t *input, size_t input_len) {
-	int stdin_pipe[2], stdout_pipe[2];
-	if (pipe(stdin_pipe) < 0) {
-		return NULL;
-	}
-	if (pipe(stdout_pipe) < 0) {
-		return NULL;
-	}
-	int flags = fcntl(stdin_pipe[1], F_GETFL, 0);
-	fcntl(stdin_pipe[1], F_SETFL, flags | O_NONBLOCK);
-	flags = fcntl(stdout_pipe[0], F_GETFL, 0);
-	fcntl(stdout_pipe[0], F_SETFL, flags | O_NONBLOCK);
-	pid_t child = fork();
-	if (child < 0) {
-		worker_log(L_DEBUG, "fork() failed (%d)", errno);
-		close(stdin_pipe[0]);
-		close(stdin_pipe[1]);
-		close(stdout_pipe[0]);
-		close(stdout_pipe[1]);
-		return NULL;
-	} else if (!child) {
-		// child
-		dup2(stdin_pipe[0], STDIN_FILENO);
-		dup2(stdout_pipe[1], STDOUT_FILENO);
-		close(stdin_pipe[0]);
-		close(stdin_pipe[1]);
-		close(stdout_pipe[0]);
-		close(stdout_pipe[1]);
-
-		char **argv = (char*[]){ strdup(exec), NULL };
-		execvp(argv[0], argv);
-		exit(1);
-	} else {
-		// parent
-		struct message_renderer *r = calloc(sizeof(struct message_renderer), 1);
-		r->pid = child;
-		close(stdin_pipe[0]);
-		close(stdout_pipe[1]);
-		r->pipe[0] = stdin_pipe[1];
-		r->pipe[1] = stdout_pipe[0];
-		r->output_len = 0;
-		r->output_size = 256;
-		r->output = malloc(r->output_size);
-		r->input = input;
-		r->input_size = input_len;
-		r->poll[0].fd = stdin_pipe[1];
-		r->poll[0].events = POLLIN;
-		return r;
-	}
-}
-
 void load_message_viewer(struct account_state *account) {
 	struct aerc_message *msg = account->viewer.msg;
 	if (!msg->parts) {
@@ -178,15 +123,19 @@ void load_message_viewer(struct account_state *account) {
 			}
 		}
 	}
-	if (!account->viewer.renderers) {
-		worker_log(L_DEBUG, "Message downloaded, calling renderers");
-		account->viewer.renderers = create_list();
+	if (!account->viewer.processes) {
+		worker_log(L_DEBUG, "Message downloaded, calling processes");
+		account->viewer.processes = create_list();
 		// TODO: Special handlers
 		for (size_t i = 0; i < msg->parts->length; ++i) {
 			struct aerc_message_part *part = msg->parts->items[i];
 			if (strcmp(part->type, "text") == 0) {
-				list_add(account->viewer.renderers,
-						exec_renderer("cat", part->content, part->size));
+				char **argv = (char*[]){ strdup("cat"), NULL };
+				struct subprocess *subp = subprocess_spawn(argv, false);
+				subprocess_set_stdin(subp, part->content, part->size);
+				subprocess_capture_stdout(subp);
+				list_add(account->viewer.processes, subp);
+				subprocess_start(subp);
 			}
 		}
 		return;

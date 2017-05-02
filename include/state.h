@@ -53,7 +53,7 @@ struct account_state {
 	struct {
 		struct aerc_message *msg;
 		struct subterm *st;
-		list_t *renderers;
+		list_t *processes;
 	} viewer;
 
 	char *name;

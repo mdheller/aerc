@@ -22,6 +22,7 @@
 #include "render.h"
 #include "util/list.h"
 #include "util/stringop.h"
+#include "subprocess.h"
 #include "log.h"
 #include "ui.h"
 
@@ -535,49 +536,14 @@ bool ui_tick() {
 		}
 	}
 
-	if (account->viewer.renderers) {
-		for (size_t i = 0; i < account->viewer.renderers->length; ++i) {
-			struct message_renderer *r = account->viewer.renderers->items[i];
-			if (r->input_size > 0) {
-				size_t amt = r->input_size < 1024 ? r->input_size : 1024;
-				int written = write(r->pipe[0], r->input, amt);
-				if (written > 0) {
-					worker_log(L_DEBUG, "Wrote %d of %zd bytes to child", written, amt);
-					r->input_size -= written;
-					r->input += written;
-					if (r->input_size == 0) {
-						close(r->pipe[0]);
-					}
-				} else {
-					worker_log(L_DEBUG, "Error %d writing to child", errno);
-					// TODO: Anything else?
-				}
-			}
-			int amt = read(r->pipe[1], &r->output[r->output_len], r->output_size - r->output_len);
-			worker_log(L_DEBUG, "Read %d bytes from child", amt);
-			if (amt == -1) {
-				if (errno != EAGAIN) {
-					close(r->pipe[0]);
-					close(r->pipe[1]);
-					load_message_viewer(account);
-				}
-			} else {
-				r->output_len += amt;
-				if (r->output_len >= r->output_size) {
-					uint8_t *new = realloc(r->output, r->output_size + 1024);
-					// TODO: OOM handling
-					r->output_size = r->output_size + 1024;
-					r->output = new;
-				}
-			}
-			int w;
-			waitpid(r->pid, &w, WNOHANG);
-			if (WIFEXITED(w)) {
-				close(r->pipe[0]);
-				close(r->pipe[1]);
-				load_message_viewer(account);
-				// TODO: Free all of the resources
-				break;
+	if (account->viewer.processes) {
+		for (size_t i = 0; i < account->viewer.processes->length; ++i) {
+			struct subprocess *subp = account->viewer.processes->items[i];
+			if (subprocess_update(subp)) {
+				subprocess_free(subp);
+				list_del(account->viewer.processes, i);
+				--i;
+				worker_log(L_DEBUG, "Child exited");
 			}
 		}
 	}
