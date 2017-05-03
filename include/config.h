@@ -12,6 +12,7 @@ struct account_config_extra {
 struct account_config {
 	char *name;
 	char *source;
+	list_t *folders;
 	list_t *extras;
 };
 

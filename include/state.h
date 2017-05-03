@@ -59,6 +59,7 @@ struct account_state {
 	char *name;
 	list_t *mailboxes;
 	char *selected;
+	struct account_config *config;
 };
 
 struct aerc_state {

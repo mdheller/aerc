@@ -49,6 +49,19 @@ void strip_quotes(char *str) {
 	*end = '\0';
 }
 
+int lenient_strcmp(const void *_a, const void *_b) {
+	const char *a = _a, *b = _b;
+	if (a == b) {
+		return 0;
+	} else if (!a) {
+		return -1;
+	} else if (!b) {
+		return 1;
+	} else {
+		return strcmp(a, b);
+	}
+}
+
 int is_prefix_of(const char *prefix, const char *str) {
 	while (*prefix) {
 		if (*prefix++ != *str++) {

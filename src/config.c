@@ -236,6 +236,11 @@ static int handle_account_option(void *_config, const char *section,
 
 	if (strcmp(key, "source") == 0) {
 		account->source = strdup(value);
+	} else if (strcmp(key, "folders") == 0 && *value) {
+		if (account->folders) {
+			free_flat_list(account->folders);
+		}
+		account->folders = split_string(value, ",");
 	} else {
 		struct account_config_extra *extra =
 			calloc(1, sizeof(struct account_config_extra));

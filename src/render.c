@@ -8,6 +8,7 @@
 #include "state.h"
 #include "ui.h"
 #include "util/list.h"
+#include "util/stringop.h"
 #include "subprocess.h"
 #include "worker.h"
 #include "log.h"
@@ -79,6 +80,13 @@ void render_sidebar(struct geometry geo) {
 		list_qsort(account->mailboxes, compare_mailboxes);
 		for (size_t i = 0; geo.y < geo.height && i < account->mailboxes->length; ++i, ++geo.y) {
 			struct aerc_mailbox *mailbox = account->mailboxes->items[i];
+			if (account->config->folders) {
+				if (list_seq_find(account->config->folders,
+							lenient_strcmp, mailbox->name) == -1) {
+					--geo.y;
+					continue;
+				}
+			}
 			if (strcmp(mailbox->name, account->selected) == 0) {
 				get_color("folder-selected", &cell);
 			} else {
