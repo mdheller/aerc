@@ -112,8 +112,10 @@ static void handle_body_content(struct message_part *part, imap_arg_t *args) {
 		if (strcasecmp(param->key, "charset") == 0) {
 			if (strcasecmp(param->value, "UTF-8") == 0) {
 				// no further action necessary
+			} else if (strcasecmp(param->value, "us-ascii") == 0) {
+				// no further action necessary
 			} else {
-				worker_log(L_ERROR, "Unknown charset %s. Please report this.", param->key);
+				worker_log(L_ERROR, "Unknown charset %s. Please report this.", param->value);
 			}
 		}
 	}
