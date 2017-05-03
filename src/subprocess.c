@@ -243,7 +243,7 @@ bool subprocess_update(struct subprocess *subp) {
 	if (subp->io_fds[0] != -1 && subp->io_stdin && subp->io_stdin->len) {
 		size_t amt = subp->io_stdin->len;
 		int written = write(subp->io_fds[0], subp->io_stdin->data
-				+ subp->io_stdin->index, amt);
+				+ subp->io_stdin->index, subp->io_stdin->len);
 		if (written > 0) {
 			worker_log(L_DEBUG, "Wrote %d of %zd bytes to child %d",
 					written, amt, subp->pid);
@@ -251,8 +251,10 @@ bool subprocess_update(struct subprocess *subp) {
 			subp->io_stdin->index += written;
 			if (subp->io_stdin->len == 0) {
 				if (subp->io_stdin->next) {
-					// TODO: minor memory leak
-					subp->io_stdin = subp->io_stdin->next;
+					struct io_capture *next = subp->io_stdin->next;
+					free(subp->io_stdin);
+					// TODO: optional destructor for capture data
+					subp->io_stdin = next;
 				} else {
 					close(subp->io_fds[0]);
 					subp->io_fds[0] = -1;

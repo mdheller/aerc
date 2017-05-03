@@ -6,10 +6,12 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include <strings.h>
 #include <string.h>
 #include <assert.h>
 #include <time.h>
 
+#include "email/encodings.h"
 #include "email/headers.h"
 #include "imap/date.h"
 #include "imap/imap.h"
@@ -85,6 +87,33 @@ static int handle_internaldate(struct mailbox_message *msg, imap_arg_t *args) {
 	return 0;
 }
 
+static void handle_body_content(struct message_part *part, imap_arg_t *args) {
+	free(part->content);
+	part->content = malloc(part->size);
+	memcpy(part->content, args->str, part->size);
+	worker_log(L_DEBUG, "Received message body");
+	if (part->body_encoding) {
+		if (strcmp(part->body_encoding, "7bit") == 0) {
+			// no further action necessary
+		} else if (strcmp(part->body_encoding, "quoted-printable") == 0) {
+			int len = quoted_printable_decode((char *)part->content, part->size);
+			part->size = len;
+		} else {
+			worker_log(L_ERROR, "Unknown encoding %s. Please report this.", part->body_encoding);
+		}
+	}
+	for (size_t i = 0; i < part->parameters->length; ++i) {
+		struct message_parameter *param = part->parameters->items[i];
+		if (strcasecmp(param->key, "charset") == 0) {
+			if (strcasecmp(param->value, "UTF-8") == 0) {
+				// no further action necessary
+			} else {
+				worker_log(L_ERROR, "Unknown charset %s. Please report this.", param->key);
+			}
+		}
+	}
+}
+
 static int handle_body(struct mailbox_message *msg, imap_arg_t *args) {
 	assert(args->type == IMAP_RESPONSE);
 	worker_log(L_DEBUG, "Handling message body fields");
@@ -109,10 +138,7 @@ static int handle_body(struct mailbox_message *msg, imap_arg_t *args) {
 		assert(msg->parts);
 		assert(i < msg->parts->length);
 		struct message_part *part = msg->parts->items[i];
-		free(part->content);
-		part->content = malloc(part->size);
-		memcpy(part->content, args->str, part->size);
-		worker_log(L_DEBUG, "Received message body");
+		handle_body_content(part, args);
 		break;
 	}
 	default:
