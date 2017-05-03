@@ -152,13 +152,13 @@ void load_message_viewer(struct account_state *account) {
 		for (size_t i = 0; i < msg->parts->length; ++i) {
 			struct aerc_message_part *part = msg->parts->items[i];
 			if (strcasecmp(part->type, "text") == 0) {
-				char **cat_argv = (char*[]){ strdup("cat"), NULL };
+				char *cat_argv[] = { strdup("cat"), NULL };
 				struct subprocess *catp = subprocess_init(cat_argv, false);
 				header_subp = catp;
 				list_foreach(msg->headers, add_header);
 				subprocess_queue_stdin(catp, part->content, part->size);
 				// TODO: actual message handlers
-				char **less_argv = (char*[]){ strdup("less"), NULL };
+				char *less_argv[] = { strdup("less"), NULL };
 				struct subprocess *lessp = subprocess_init(less_argv, true);
 				subprocess_pipe(catp, lessp);
 				list_add(account->viewer.processes, catp);

@@ -1,6 +1,7 @@
 #ifndef _AERC_SUBPROCESS_H
 #define _AERC_SUBPROCESS_H
 
+#include <sys/types.h>
 #include <libtsm.h>
 #include <termbox.h>
 #include <unistd.h>

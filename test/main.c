@@ -17,6 +17,7 @@ int main(int argc, char **argv) {
 	ret += run_tests_imap();
 	ret += run_tests_headers();
 	ret += run_tests_bind();
+	ret += run_tests_subprocess();
 
 	return ret;
 }

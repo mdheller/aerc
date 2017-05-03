@@ -162,6 +162,7 @@ static void init_parent(struct subprocess *subp) {
 }
 
 void subprocess_start(struct subprocess *subp) {
+	signal(SIGPIPE, SIG_IGN); // we prefer EPIPE
 	subp->pid = fork();
 	if (subp->pid < 0) {
 		// TODO: bubble up error?
@@ -268,7 +269,7 @@ bool subprocess_update(struct subprocess *subp) {
 	}
 	if (subp->io_fds[1] != -1 && subp->io_stdout) {
 		int amt = update_io_capture(subp->io_fds[1], subp->io_stdout);
-		if (amt > 0) {
+		if (amt >= 0) {
 			worker_log(L_DEBUG, "Read %d bytes from child %d", amt, subp->pid);
 		} else if (errno != EAGAIN) {
 			close(subp->io_fds[1]);
@@ -277,7 +278,7 @@ bool subprocess_update(struct subprocess *subp) {
 	}
 	if (subp->io_fds[2] != -1 && subp->io_stderr) {
 		int amt = update_io_capture(subp->io_fds[2], subp->io_stderr);
-		if (amt > 0) {
+		if (amt >= 0) {
 			worker_log(L_DEBUG, "Read %d bytes from child %d", amt, subp->pid);
 		} else if (errno != EAGAIN) {
 			close(subp->io_fds[2]);
@@ -386,7 +387,7 @@ struct tb_to_xkb_map subp_tb_to_xkb[] = {
 	{ TB_KEY_CTRL_5, XKB_KEY_5, TSM_CONTROL_MASK },
 	{ TB_KEY_CTRL_6, XKB_KEY_6, TSM_CONTROL_MASK },
 	{ TB_KEY_CTRL_7, XKB_KEY_7, TSM_CONTROL_MASK },
-	{ TB_KEY_SPACE, XKB_KEY_space, 0 },
+	{ TB_KEY_SPACE, XKB_KEY_KP_Space, 0 },
 };
 
 void subprocess_pty_key(struct subprocess *subp, struct tb_event *event) {

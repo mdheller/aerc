@@ -21,5 +21,6 @@ int run_tests_urlparse();
 int run_tests_imap();
 int run_tests_headers();
 int run_tests_bind();
+int run_tests_subprocess();
 
 #endif
