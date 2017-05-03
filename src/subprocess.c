@@ -365,6 +365,7 @@ struct tb_to_xkb_map subp_tb_to_xkb[] = {
 	{ TB_KEY_CTRL_F, XKB_KEY_f, TSM_CONTROL_MASK },
 	{ TB_KEY_CTRL_G, XKB_KEY_g, TSM_CONTROL_MASK },
 	{ TB_KEY_BACKSPACE, XKB_KEY_BackSpace, 0 },
+	{ TB_KEY_BACKSPACE2, XKB_KEY_BackSpace, 0 },
 	{ TB_KEY_TAB, XKB_KEY_Tab, 0 },
 	{ TB_KEY_CTRL_J, XKB_KEY_J, TSM_CONTROL_MASK },
 	{ TB_KEY_CTRL_K, XKB_KEY_K, TSM_CONTROL_MASK },
