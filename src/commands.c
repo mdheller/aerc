@@ -240,8 +240,8 @@ static void handle_view_message(int argc, char **argv) {
 		set_status(account, ACCOUNT_ERROR, "Usage: view-message");
 		return;
 	}
-	if (account->viewer.msg) {
-		set_status(account, ACCOUNT_ERROR, "Message already open");
+	if (account->viewer.term) {
+		set_status(account, ACCOUNT_ERROR, "Terminal in use");
 		return;
 	}
 	struct aerc_mailbox *mbox = get_aerc_mailbox(account, account->selected);
@@ -252,6 +252,24 @@ static void handle_view_message(int argc, char **argv) {
 	account->viewer.msg = mbox->messages->items[
 		mbox->messages->length - account->ui.selected_message - 1];
 	load_message_viewer(account);
+	request_rerender(PANEL_MESSAGE_VIEW);
+}
+
+static void handle_term_exec(int argc, char **argv) {
+	struct account_state *account =
+		state->accounts->items[state->selected_account];
+	if (argc < 1) {
+		set_status(account, ACCOUNT_ERROR, "Usage: term-exec [shell command...]");
+		return;
+	}
+	if (account->viewer.term) {
+		set_status(account, ACCOUNT_ERROR, "Terminal in use");
+		return;
+	}
+	char *exec = join_args(argv, argc);
+	char *sub_argv[] = { "sh", "-c", exec, NULL };
+	account->viewer.term = subprocess_init(sub_argv, true);
+	subprocess_start(account->viewer.term);
 	request_rerender(PANEL_MESSAGE_VIEW);
 }
 
@@ -287,6 +305,7 @@ struct cmd_handler cmd_handlers[] = {
 	{ "reload", handle_reload },
 	{ "select-message", handle_select_message },
 	{ "set", handle_set },
+	{ "term-exec", handle_term_exec },
 	{ "view-message", handle_view_message },
 };
 

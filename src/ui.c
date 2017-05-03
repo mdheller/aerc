@@ -225,7 +225,7 @@ void rerender() {
 	}
 
 	if (state->rerender & (PANEL_MESSAGE_VIEW | PANEL_MESSAGE_LIST | PANEL_ALL)
-			&& account->viewer.msg) {
+			&& account->viewer.term) {
 		rerender_message_view();
 	} else {
 		reset_fetches();
@@ -386,7 +386,7 @@ static void pass_event_to_command(struct tb_event *event, aqueue_t *event_queue)
 	struct account_state *account =
 		state->accounts->items[state->selected_account];
 	const char* command = bind_handle_key_event(
-		account->viewer.msg ? state->mbinds : state->lbinds, event);
+		account->viewer.term ? state->mbinds : state->lbinds, event);
 	if (command) {
 		size_t consumed = 0;
 		struct tb_event *new_event = NULL;
