@@ -4,11 +4,13 @@ aerc is a **work in progress** asyncronous email client for your terminal.
 [Join the IRC channel](http://webchat.freenode.net/?channels=aerc&uio=d4)
 (#aerc on irc.freenode.net).
 
-![](https://sr.ht/X_w_.png)
+<p align="center">
+    <img src="https://sr.ht/Klj3.png" />
+</p>
 
 ## Status
 
-Very WIP
+[aerc status](https://github.com/SirCmpwn/aerc/issues/72)
 
 ## Goals
 
