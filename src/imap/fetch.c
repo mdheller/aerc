@@ -19,6 +19,7 @@
 #include "log.h"
 #include "util/list.h"
 #include "util/stringop.h"
+#include "util/base64.h"
 
 void imap_fetch(struct imap_connection *imap, imap_callback_t callback,
 		void *data, size_t min, size_t max, const char *what) {
@@ -97,6 +98,10 @@ static void handle_body_content(struct message_part *part, imap_arg_t *args) {
 			// no further action necessary
 		} else if (strcmp(part->body_encoding, "quoted-printable") == 0) {
 			int len = quoted_printable_decode((char *)part->content, part->size);
+			part->size = len;
+		} else if (strcmp(part->body_encoding, "base64") == 0) {
+			int len;
+			unbase64((char *)part->content, part->size, &len);
 			part->size = len;
 		} else {
 			worker_log(L_ERROR, "Unknown encoding %s. Please report this.", part->body_encoding);

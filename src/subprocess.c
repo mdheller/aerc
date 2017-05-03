@@ -240,7 +240,7 @@ static bool subprocess_update_pty(struct pty *pty) {
 }
 
 bool subprocess_update(struct subprocess *subp) {
-	if (subp->io_fds[0] != -1 && subp->io_stdin && subp->io_stdin->len) {
+	while (subp->io_fds[0] != -1 && subp->io_stdin && subp->io_stdin->len) {
 		size_t amt = subp->io_stdin->len;
 		int written = write(subp->io_fds[0], subp->io_stdin->data
 				+ subp->io_stdin->index, subp->io_stdin->len);
@@ -255,6 +255,7 @@ bool subprocess_update(struct subprocess *subp) {
 					free(subp->io_stdin);
 					// TODO: optional destructor for capture data
 					subp->io_stdin = next;
+					continue;
 				} else {
 					close(subp->io_fds[0]);
 					subp->io_fds[0] = -1;
@@ -267,6 +268,7 @@ bool subprocess_update(struct subprocess *subp) {
 			subp->io_fds[0] = -1;
 			// TODO: Anything else?
 		}
+		break;
 	}
 	if (subp->io_fds[1] != -1 && subp->io_stdout) {
 		int amt = update_io_capture(subp->io_fds[1], subp->io_stdout);

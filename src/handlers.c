@@ -161,6 +161,7 @@ void load_message_viewer(struct account_state *account) {
 				subprocess_queue_stdin(subp, part->content, part->size);
 				account->viewer.term = subp;
 				subprocess_start(subp);
+				break;
 			}
 		}
 		return;
