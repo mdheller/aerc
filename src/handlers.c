@@ -154,7 +154,7 @@ void load_message_viewer(struct account_state *account) {
 		for (size_t i = 0; i < msg->parts->length; ++i) {
 			struct aerc_message_part *part = msg->parts->items[i];
 			if (strcasecmp(part->type, "text") == 0) {
-				char *argv[] = { "sh", "-c", "cat | less", NULL };
+				char *argv[] = { "sh", "-c", "cat | fold -sw $(tput cols) | less", NULL };
 				struct subprocess *subp = subprocess_init(argv, true);
 				header_subp = subp;
 				list_foreach(msg->headers, add_header);
