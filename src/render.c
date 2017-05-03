@@ -245,6 +245,15 @@ static int tsm_draw_cb(struct tsm_screen *con,uint32_t id, const uint32_t *ch,
 		.fg = TB_DEFAULT,
 		.bg = TB_DEFAULT,
 	};
+	if (attr->bold) {
+		cell.fg |= TB_BOLD;
+	}
+	if (attr->underline) {
+		cell.fg |= TB_UNDERLINE;
+	}
+	if (attr->inverse) {
+		cell.fg |= TB_REVERSE;
+	}
 	while (len--) {
 		cell.ch = *ch;
 		tb_put_cell(geo->x + posx++, geo->y + posy++, &cell);
