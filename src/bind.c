@@ -146,9 +146,6 @@ void add_default_bindings(struct bind *lbinds, struct bind *mbinds) {
 	bind_add(lbinds, "<Enter>", ":view-message<Enter>");
 	bind_add(lbinds, "<Space>", ":view-message<Enter>");
 
-	bind_add(mbinds, "<Escape>", ":close-message<Enter>");
-	bind_add(mbinds, "q", ":close-message<Enter>");
-
 	bind_add(mbinds, "<Ctrl+h>", ":previous-mailbox<Enter>");
 	bind_add(mbinds, "<Left>", ":previous-mailbox<Enter>");
 
