@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <time.h>
 #include <errno.h>
 #include "config.h"
@@ -132,7 +133,7 @@ void load_message_viewer(struct account_state *account) {
 	}
 	for (size_t i = 0; i < msg->parts->length; ++i) {
 		struct aerc_message_part *part = msg->parts->items[i];
-		if (strcmp(part->type, "text") == 0) {
+		if (strcasecmp(part->type, "text") == 0) {
 			if (!part->content) {
 				struct fetch_part_request *request =
 					calloc(sizeof(struct fetch_part_request), 1);
@@ -150,7 +151,7 @@ void load_message_viewer(struct account_state *account) {
 		// TODO: Special handlers
 		for (size_t i = 0; i < msg->parts->length; ++i) {
 			struct aerc_message_part *part = msg->parts->items[i];
-			if (strcmp(part->type, "text") == 0) {
+			if (strcasecmp(part->type, "text") == 0) {
 				char **cat_argv = (char*[]){ strdup("cat"), NULL };
 				struct subprocess *catp = subprocess_init(cat_argv, false);
 				header_subp = catp;
