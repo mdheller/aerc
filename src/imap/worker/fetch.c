@@ -30,7 +30,7 @@ void handle_worker_fetch_message_part(struct worker_pipe *pipe,
 	++request->index; // IMAP is 1 indexed
 	++request->part;
 
-	const char *fmt = "BODY.PEEK[%d]";
+	const char *fmt = "BODY[%d]";
 	int len = snprintf(NULL, 0, fmt, request->part);
 	char *what = malloc(len + 1);
 	snprintf(what, len + 1, fmt, request->part);
