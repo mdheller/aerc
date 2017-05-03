@@ -146,8 +146,10 @@ void load_message_viewer(struct account_state *account) {
 		}
 	}
 	if (!account->viewer.processes) {
-		worker_log(L_DEBUG, "Message downloaded, calling processes");
 		account->viewer.processes = create_list();
+	}
+	if (account->viewer.processes->length == 0) {
+		worker_log(L_DEBUG, "Message downloaded, calling processes");
 		// TODO: Special handlers
 		for (size_t i = 0; i < msg->parts->length; ++i) {
 			struct aerc_message_part *part = msg->parts->items[i];
