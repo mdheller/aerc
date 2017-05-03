@@ -290,8 +290,9 @@ bool subprocess_update(struct subprocess *subp) {
 		}
 	}
 	int w;
-	waitpid(subp->pid, &w, WNOHANG);
-	return WIFEXITED(w);
+	if (waitpid(subp->pid, &w, WNOHANG) != 0)
+		return WIFEXITED(w);
+	return false;
 }
 
 void subprocess_free(struct subprocess *subp) {
