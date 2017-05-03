@@ -241,8 +241,7 @@ static bool subprocess_update_pty(struct pty *pty) {
 
 bool subprocess_update(struct subprocess *subp) {
 	if (subp->io_fds[0] != -1 && subp->io_stdin && subp->io_stdin->len) {
-		size_t amt = subp->io_stdin->len < 1024 ?
-			subp->io_stdin->len : 1024;
+		size_t amt = subp->io_stdin->len;
 		int written = write(subp->io_fds[0], subp->io_stdin->data
 				+ subp->io_stdin->index, amt);
 		if (written > 0) {
