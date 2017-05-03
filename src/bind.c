@@ -142,6 +142,7 @@ void add_default_bindings(struct bind *lbinds, struct bind *mbinds) {
 	bind_add(lbinds, "G", ":select-message -1<Enter>");
 
 	bind_add(lbinds, "c", ":cd ");
+	bind_add(lbinds, "$", ":term-exec ");
 
 	bind_add(lbinds, "<Enter>", ":view-message<Enter>");
 	bind_add(lbinds, "<Space>", ":view-message<Enter>");
