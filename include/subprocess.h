@@ -22,14 +22,15 @@ struct io_capture {
 struct subprocess {
 	pid_t pid;
 	int io_fds[3];
-	int pipe[2];
+	int pipes[3][2];
+	char **argv;
 	struct pty *pty;
 	struct io_capture *io_stdin;
 	struct io_capture *io_stdout;
 	struct io_capture *io_stderr;
 };
 
-struct subprocess *subprocess_spawn(char **argv, bool pty);
+struct subprocess *subprocess_init(char **argv, bool pty);
 void subprocess_start(struct subprocess *subp);
 void subprocess_free(struct subprocess *subp);
 void subprocess_pipe(struct subprocess *from, struct subprocess *to);

@@ -131,11 +131,16 @@ void load_message_viewer(struct account_state *account) {
 			struct aerc_message_part *part = msg->parts->items[i];
 			if (strcmp(part->type, "text") == 0) {
 				char **argv = (char*[]){ strdup("cat"), NULL };
-				struct subprocess *subp = subprocess_spawn(argv, false);
+				struct subprocess *subp = subprocess_init(argv, false);
 				subprocess_set_stdin(subp, part->content, part->size);
-				subprocess_capture_stdout(subp);
+				char **argv2 = (char*[]){ strdup("cat"), NULL };
+				struct subprocess *subp2 = subprocess_init(argv2, false);
+				subprocess_pipe(subp, subp2);
+				subprocess_capture_stdout(subp2);
 				list_add(account->viewer.processes, subp);
+				list_add(account->viewer.processes, subp2);
 				subprocess_start(subp);
+				subprocess_start(subp2);
 			}
 		}
 		return;
