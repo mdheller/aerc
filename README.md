@@ -2,7 +2,10 @@
 
 aerc is a **work in progress** asyncronous email client for your terminal.
 [Join the IRC channel](http://webchat.freenode.net/?channels=aerc&uio=d4)
-(#aerc on irc.freenode.net).
+(#aerc on irc.freenode.net). aerc is network-first, and is designed with
+network-based email protocols in mind. It runs all network code in separate
+worker threads that don't lock up the UI. Compared to mutt, it's also easier on
+the network and much faster - it only fetches what it needs.
 
 <p align="center">
     <img src="https://sr.ht/Klj3.png" />
@@ -12,21 +15,17 @@ aerc is a **work in progress** asyncronous email client for your terminal.
 
 [aerc status](https://github.com/SirCmpwn/aerc/issues/72)
 
-## Goals
+## Features
 
-aerc has, or at least *will have*, several advantages over mutt:
+Note: aerc is not done, some of these are planned or in-progress
 
-* Networking in a seperate thread and doesn't lock up the UI
-    * It's easier on the network in general, only fetches the resources it needs
-    * As a result it's much faster than mutt in general
-    * Uses lightweight message passing based on stdatomic.h
-* Has a better system for keybindings and better initial keybindings
-* Syntax highlighting for patches and integrated tools for git and mailing lists
-* Uses an external pager to render emails
+* Vim-style keybindings and commands
+* Custom pipelines for email handling (highlighting diffs, rendering HTML, etc)
+* Integrated tools for patch review, git, mailing lists, etc
+* View or compose emails with arbitrary tools in the embedded terminal
 * Integrated address book and tab completion for contacts
-* Supports multiple accounts
-* Better PGP support, out of the box
-* Easier to configure
+* Support for multiple accounts with different backends
+* Out of the box PGP support with Keybase integration
 
 ## Compiling from Source
 
