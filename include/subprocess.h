@@ -8,7 +8,6 @@
 struct pty {
 	struct tsm_screen *screen;
 	struct tsm_vte *vte;
-	bool clear;
 	tsm_age_t age;
 	pid_t pid;
 	int fd;
@@ -25,6 +24,7 @@ struct subprocess {
 	int pipes[3][2];
 	char **argv;
 	struct pty *pty;
+	bool stdin_piped;
 	struct io_capture *io_stdin;
 	struct io_capture *io_stdout;
 	struct io_capture *io_stderr;
@@ -38,5 +38,8 @@ void subprocess_set_stdin(struct subprocess *subp, uint8_t *data, size_t length)
 void subprocess_capture_stdout(struct subprocess *subp);
 void subprocess_capture_stderr(struct subprocess *subp);
 bool subprocess_update(struct subprocess *subp);
+void subprocess_pty_key(struct subprocess *subp, struct tb_event *event);
+void subprocess_pty_resize(struct subprocess *subp,
+		unsigned short width, unsigned short height);
 
 #endif

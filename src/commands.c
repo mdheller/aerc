@@ -7,14 +7,15 @@
 #include "util/stringop.h"
 #include "handlers.h"
 #include "commands.h"
-#include "subterm.h"
+#include "subprocess.h"
 #include "config.h"
 #include "state.h"
 #include "log.h"
 #include "ui.h"
 
 static void close_message(struct account_state *account) {
-	cleanup_subterm(&account->viewer.st);
+	subprocess_free(account->viewer.term);
+	account->viewer.term = NULL;
 	account->viewer.msg = NULL;
 	request_rerender(PANEL_MESSAGE_LIST);
 }

@@ -8,7 +8,7 @@
 #include "state.h"
 #include "ui.h"
 #include "util/list.h"
-#include "subterm.h"
+#include "subprocess.h"
 #include "worker.h"
 #include "log.h"
 
@@ -242,7 +242,7 @@ static int tsm_draw_cb(struct tsm_screen *con,uint32_t id, const uint32_t *ch,
 	struct geometry *geo = data;
 	struct account_state *account =
 		state->accounts->items[state->selected_account];
-	if (account->viewer.st->age >= age) {
+	if (account->viewer.term->pty->age >= age) {
 		return 0;
 	}
 	// TODO: handle colors
@@ -265,15 +265,13 @@ void render_message_view(struct geometry geo) {
 		.fg = TB_DEFAULT,
 		.bg = TB_DEFAULT,
 	};
-	if (!account->viewer.st) {
+	if (!account->viewer.term || !account->viewer.term->pty) {
 		clear_remaining(&cell, geo);
 		add_loading(geo);
 		return;
 	}
-	if (account->viewer.st->clear) {
-		clear_remaining(&cell, geo);
-		account->viewer.st->clear = false;
-	}
-	subterm_resize(account->viewer.st, geo.width, geo.height);
-	account->viewer.st->age = tsm_screen_draw(account->viewer.st->screen, tsm_draw_cb, &geo);
+	clear_remaining(&cell, geo);
+	subprocess_pty_resize(account->viewer.term, geo.width, geo.height);
+	account->viewer.term->pty->age = tsm_screen_draw(
+			account->viewer.term->pty->screen, tsm_draw_cb, &geo);
 }

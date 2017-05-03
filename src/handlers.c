@@ -130,17 +130,17 @@ void load_message_viewer(struct account_state *account) {
 		for (size_t i = 0; i < msg->parts->length; ++i) {
 			struct aerc_message_part *part = msg->parts->items[i];
 			if (strcmp(part->type, "text") == 0) {
-				char **argv = (char*[]){ strdup("cat"), NULL };
-				struct subprocess *subp = subprocess_init(argv, false);
-				subprocess_set_stdin(subp, part->content, part->size);
-				char **argv2 = (char*[]){ strdup("cat"), NULL };
-				struct subprocess *subp2 = subprocess_init(argv2, false);
-				subprocess_pipe(subp, subp2);
-				subprocess_capture_stdout(subp2);
-				list_add(account->viewer.processes, subp);
-				list_add(account->viewer.processes, subp2);
-				subprocess_start(subp);
-				subprocess_start(subp2);
+				char **cat_argv = (char*[]){ strdup("cat"), NULL };
+				struct subprocess *catp = subprocess_init(cat_argv, false);
+				subprocess_set_stdin(catp, part->content, part->size);
+				// TODO: actual message handlers
+				char **less_argv = (char*[]){ strdup("less"), NULL };
+				struct subprocess *lessp = subprocess_init(less_argv, true);
+				subprocess_pipe(catp, lessp);
+				list_add(account->viewer.processes, catp);
+				account->viewer.term = lessp;
+				subprocess_start(catp);
+				subprocess_start(lessp);
 			}
 		}
 		return;

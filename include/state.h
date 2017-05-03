@@ -52,7 +52,7 @@ struct account_state {
 	
 	struct {
 		struct aerc_message *msg;
-		struct subterm *st;
+		struct subprocess *term;
 		list_t *processes;
 	} viewer;
 
