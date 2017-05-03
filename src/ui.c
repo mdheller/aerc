@@ -313,7 +313,15 @@ void add_loading(struct geometry geo) {
 	render_loading(geo);
 }
 
+static void abort_command() {
+	free(state->command.text);
+	state->command.text = NULL;
+	request_rerender(PANEL_STATUS_BAR);
+}
+
 static void command_input(uint16_t ch) {
+	struct account_state *account =
+		state->accounts->items[state->selected_account];
 	size_t size = tb_utf8_char_length(ch);
 	size_t len = strlen(state->command.text);
 	if (state->command.length < len + size + 1) {
@@ -323,12 +331,15 @@ static void command_input(uint16_t ch) {
 	}
 	memcpy(state->command.text + len, &ch, size);
 	state->command.text[len + size] = '\0';
-	request_rerender(PANEL_STATUS_BAR);
-}
-
-static void abort_command() {
-	free(state->command.text);
-	state->command.text = NULL;
+	if (account->viewer.term && strcmp(state->command.text, ":") == 0) {
+		// Pass through to term
+		abort_command();
+		struct tb_event fake_event = {
+			.type = TB_EVENT_KEY,
+			.ch = ':'
+		};
+		subprocess_pty_key(account->viewer.term, &fake_event);
+	}
 	request_rerender(PANEL_STATUS_BAR);
 }
 
