@@ -173,11 +173,20 @@ void subprocess_start(struct subprocess *subp) {
 	}
 }
 
-void subprocess_set_stdin(struct subprocess *subp, uint8_t *data, size_t length) {
+void subprocess_queue_stdin(struct subprocess *subp, uint8_t *data, size_t length) {
 	subp->stdin_piped = true;
-	subp->io_stdin = calloc(sizeof(struct io_capture), 1);
-	subp->io_stdin->data = data;
-	subp->io_stdin->size = subp->io_stdin->len = length;
+	struct io_capture *cap = calloc(sizeof(struct io_capture), 1);
+	cap->data = data;
+	cap->size = cap->len = length;
+	if (!subp->io_stdin) {
+		subp->io_stdin = cap;
+	} else {
+		struct io_capture *prev = subp->io_stdin;
+		while (prev->next) {
+			prev = prev->next;
+		}
+		prev->next = cap;
+	}
 }
 
 void subprocess_capture_stdout(struct subprocess *subp) {
@@ -241,8 +250,13 @@ bool subprocess_update(struct subprocess *subp) {
 			subp->io_stdin->len -= written;
 			subp->io_stdin->index += written;
 			if (subp->io_stdin->len == 0) {
-				close(subp->io_fds[0]);
-				subp->io_fds[0] = -1;
+				if (subp->io_stdin->next) {
+					// TODO: minor memory leak
+					subp->io_stdin = subp->io_stdin->next;
+				} else {
+					close(subp->io_fds[0]);
+					subp->io_fds[0] = -1;
+				}
 			}
 		} else {
 			worker_log(L_DEBUG, "Error %d writing to child %d",

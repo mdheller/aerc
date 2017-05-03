@@ -26,7 +26,7 @@ struct aerc_config {
 		char *index_format;
 		char *timestamp_format;
 		char *render_account_tabs;
-		char *show_headers;
+		list_t *show_headers;
 		int sidebar_width;
 		int preview_height;
 	} ui;

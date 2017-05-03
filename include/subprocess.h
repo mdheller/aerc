@@ -16,6 +16,7 @@ struct pty {
 struct io_capture {
 	size_t len, size, index;
 	uint8_t *data;
+	struct io_capture *next;
 };
 
 struct subprocess {
@@ -34,7 +35,7 @@ struct subprocess *subprocess_init(char **argv, bool pty);
 void subprocess_start(struct subprocess *subp);
 void subprocess_free(struct subprocess *subp);
 void subprocess_pipe(struct subprocess *from, struct subprocess *to);
-void subprocess_set_stdin(struct subprocess *subp, uint8_t *data, size_t length);
+void subprocess_queue_stdin(struct subprocess *subp, uint8_t *data, size_t length);
 void subprocess_capture_stdout(struct subprocess *subp);
 void subprocess_capture_stderr(struct subprocess *subp);
 bool subprocess_update(struct subprocess *subp);

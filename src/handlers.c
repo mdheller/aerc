@@ -12,6 +12,7 @@
 #include "log.h"
 #include "state.h"
 #include "ui.h"
+#include "email/headers.h"
 #include "util/list.h"
 #include "worker.h"
 #include "subprocess.h"
@@ -103,6 +104,26 @@ void handle_worker_mailbox_updated(struct account_state *account,
 	request_rerender(PANEL_MESSAGE_LIST | PANEL_SIDEBAR);
 }
 
+// TODO: get rid of global
+static struct subprocess *header_subp;
+
+static int header_cmp(const void *_a, const void *_b) {
+	const char *a = _a;
+	const char *b = _b;
+	return strcmp(a, b);
+}
+
+static void add_header(void *_header) {
+	struct email_header *header = _header;
+	if (list_seq_find(config->ui.show_headers, header_cmp, header->key) == -1) {
+		return;
+	}
+	int len = snprintf(NULL, 0, "%s: %s\n", header->key, header->value);
+	char *h = malloc(len + 1);
+	snprintf(h, len + 1, "%s: %s\n", header->key, header->value);
+	subprocess_queue_stdin(header_subp, (uint8_t *)h, len);
+}
+
 void load_message_viewer(struct account_state *account) {
 	struct aerc_message *msg = account->viewer.msg;
 	if (!msg->parts) {
@@ -132,7 +153,9 @@ void load_message_viewer(struct account_state *account) {
 			if (strcmp(part->type, "text") == 0) {
 				char **cat_argv = (char*[]){ strdup("cat"), NULL };
 				struct subprocess *catp = subprocess_init(cat_argv, false);
-				subprocess_set_stdin(catp, part->content, part->size);
+				header_subp = catp;
+				list_foreach(msg->headers, add_header);
+				subprocess_queue_stdin(catp, part->content, part->size);
 				// TODO: actual message handlers
 				char **less_argv = (char*[]){ strdup("less"), NULL };
 				struct subprocess *lessp = subprocess_init(less_argv, true);

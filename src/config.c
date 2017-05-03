@@ -83,6 +83,12 @@ static int handle_loading_indicator(struct aerc_config *config, const char *valu
 	return 1;
 }
 
+static int handle_show_headers(struct aerc_config *config, const char *value) {
+	free_flat_list(config->ui.show_headers);
+	config->ui.show_headers = split_string(value, ",");
+	return 1;
+}
+
 int handle_config_option(void *_config, const char *section,
 		const char *key, const char *value) {
 	struct aerc_config *config = _config;
@@ -96,7 +102,6 @@ int handle_config_option(void *_config, const char *section,
 		{ "ui", "index-format", &config->ui.index_format },
 		{ "ui", "timestamp-format", &config->ui.timestamp_format },
 		{ "ui", "render-account-tabs", &config->ui.render_account_tabs },
-		{ "ui", "show-headers", &config->ui.show_headers },
 		{ "viewer", "pager", &config->viewer.pager },
 		// TODO: Other viewer stuff
 	};
@@ -109,7 +114,8 @@ int handle_config_option(void *_config, const char *section,
 		const char *key;
 		int (*func)(struct aerc_config *config, const char *value);
 	} funcs[] = {
-		{ "ui", "loading-frames", handle_loading_indicator }
+		{ "ui", "loading-frames", handle_loading_indicator },
+		{ "ui", "show-headers", handle_show_headers }
 	};
 
 	if (strcmp(section, "colors") == 0) {
@@ -267,7 +273,13 @@ static void config_defaults(struct aerc_config *config) {
 	list_add(config->ui.loading_frames, strdup(" .. "));
 	config->ui.index_format = strdup("%4C %Z %D %-17.17n %s");
 	config->ui.timestamp_format = strdup("%F %l:%M %p");
-	config->ui.show_headers = strdup("From,To,Cc,Bcc,Subject,Date");
+	config->ui.show_headers = create_list();
+	list_add(config->ui.show_headers, strdup("From"));
+	list_add(config->ui.show_headers, strdup("To"));
+	list_add(config->ui.show_headers, strdup("Cc"));
+	list_add(config->ui.show_headers, strdup("Bcc"));
+	list_add(config->ui.show_headers, strdup("Subject"));
+	list_add(config->ui.show_headers, strdup("Date"));
 	config->ui.sidebar_width = 20;
 	config->ui.preview_height = 12;
 
