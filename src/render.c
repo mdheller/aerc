@@ -240,11 +240,6 @@ static int tsm_draw_cb(struct tsm_screen *con,uint32_t id, const uint32_t *ch,
 	   size_t len, unsigned int width, unsigned int posx, unsigned int posy,
 	   const struct tsm_screen_attr *attr, tsm_age_t age, void *data) {
 	struct geometry *geo = data;
-	struct account_state *account =
-		state->accounts->items[state->selected_account];
-	if (account->viewer.term->pty->age >= age) {
-		return 0;
-	}
 	// TODO: handle colors
 	struct tb_cell cell = {
 		.fg = TB_DEFAULT,
