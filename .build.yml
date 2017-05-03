@@ -1,0 +1,22 @@
+# vim: ft=yaml ts=2 sw=2 et :
+image: archlinux
+packages:
+  - cmake
+  - openssl
+  - libtsm
+  - cmocka
+  - termbox-git
+sources:
+  - https://git.sr.ht/~sircmpwn/aerc
+tasks:
+  - setup: |
+      cd aerc
+      mkdir build
+      cd build
+      cmake ..
+  - build: |
+      cd sway/build
+      make
+  - test: |
+      cd aerc/build
+      ./bin/tests
