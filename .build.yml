@@ -1,6 +1,7 @@
 # vim: ft=yaml ts=2 sw=2 et :
 image: archlinux
 packages:
+  - python
   - cmake
   - openssl
   - libtsm
@@ -15,7 +16,7 @@ tasks:
       cd build
       cmake ..
   - build: |
-      cd sway/build
+      cd aerc/build
       make
   - test: |
       cd aerc/build
