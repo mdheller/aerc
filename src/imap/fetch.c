@@ -121,6 +121,12 @@ static void handle_body_content(struct message_part *part, imap_arg_t *args) {
 	}
 }
 
+static int flag_cmp(const void *_item, const void *_flag) {
+	const char *item = _item;
+	const char *flag = _flag;
+	return strcmp(item, flag);
+}
+
 static int handle_body(struct mailbox_message *msg, imap_arg_t *args) {
 	assert(args->type == IMAP_RESPONSE);
 	worker_log(L_DEBUG, "Handling message body fields");
@@ -144,6 +150,10 @@ static int handle_body(struct mailbox_message *msg, imap_arg_t *args) {
 		size_t i = resp->num - 1;
 		assert(msg->parts);
 		assert(i < msg->parts->length);
+		int seen = list_seq_find(msg->flags, flag_cmp, "\\Seen");
+		if (seen != -1) {
+			list_add(msg->flags, strdup("\\Seen"));
+		}
 		struct message_part *part = msg->parts->items[i];
 		handle_body_content(part, args);
 		break;
