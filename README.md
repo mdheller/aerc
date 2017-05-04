@@ -1,12 +1,12 @@
 # aerc
 
-aerc is a **work in progress** asyncronous email client for your terminal.
-(#aerc on irc.freenode.net). aerc is network-first, and is designed with
-network-based email protocols in mind. It runs all network code in separate
-worker threads that don't lock up the UI. Compared to mutt, it's also easier on
-the network and much faster - it only fetches what it needs.
+aerc is a **work in progress** asyncronous email client for your terminal. aerc
+is network-first, and is designed with network-based email protocols in mind. It
+runs all network code in separate worker threads that don't lock up the UI.
+Compared to mutt, it's also easier on the network and much faster - it only
+fetches what it needs.
 
-[Join the IRC channel](http://webchat.freenode.net/?channels=aerc&uio=d4)
+[Join the IRC channel](http://webchat.freenode.net/?channels=aerc&uio=d4) (#aerc on irc.freenode.net).
 
 <p align="center">
     <img src="https://sr.ht/Klj3.png" />
