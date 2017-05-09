@@ -450,6 +450,8 @@ static void process_event(struct tb_event* event, aqueue_t *event_queue) {
 				free(state->command.text);
 				if (state->command.cmd_history->length > cmd_index) {
 					state->command.text = strdup(state->command.cmd_history->items[state->command.cmd_history->length - 1 - cmd_index++]);
+				} else {
+					state->command.text = strdup("");
 				}
 				break;
 			case TB_KEY_ARROW_DOWN:
@@ -457,7 +459,7 @@ static void process_event(struct tb_event* event, aqueue_t *event_queue) {
 				if (cmd_index > 0) {
 					state->command.text = strdup(state->command.cmd_history->items[--cmd_index]);
 				} else {
-					state->command.text[0] = '\0';
+					state->command.text = strdup("");
 				}
 				break;
 			case TB_KEY_ENTER:
