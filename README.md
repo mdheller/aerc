@@ -12,6 +12,9 @@ fetches what it needs.
     <img src="https://sr.ht/Klj3.png" />
 </p>
 
+If you'd like to support aerc development, you can contribute to [my Patreon
+page](https://patreon.com/sircmpwn).
+
 ## Status
 
 [aerc status](https://github.com/SirCmpwn/aerc/issues/72)
