@@ -80,7 +80,7 @@ void render_sidebar(struct geometry geo) {
 		list_qsort(account->mailboxes, compare_mailboxes);
 		for (size_t i = 0; geo.y < geo.height && i < account->mailboxes->length; ++i, ++geo.y) {
 			struct aerc_mailbox *mailbox = account->mailboxes->items[i];
-			if (account->config->folders) {
+			if (account->config->folders && strcmp(mailbox->name, account->selected)) {
 				if (list_seq_find(account->config->folders,
 							lenient_strcmp, mailbox->name) == -1) {
 					--geo.y;
@@ -113,7 +113,7 @@ void render_sidebar(struct geometry geo) {
 				tb_put_cell(geo.x + geo.width - 3, geo.y, &cell);
 			}
 		}
-		geo.x = _x; ++geo.y;
+		geo.x = _x;
 	} else {
 		add_loading(geo);
 		geo.x = _x;
