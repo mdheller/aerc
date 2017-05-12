@@ -89,6 +89,7 @@ int main(int argc, char **argv) {
 	abs_init();
 	colors_init();
 
+	worker_log(L_DEBUG, "Note: core dumps may include your password beyond this point");
 	if (!load_main_config(NULL)) {
 		worker_log(L_ERROR, "Error loading config");
 		return 1;

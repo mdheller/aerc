@@ -33,6 +33,9 @@ void handle_worker_connect(struct worker_pipe *pipe, struct worker_message *mess
 		worker_log(L_DEBUG, "Invalid connection string '%s'",
 			(char*)message->data);
 	}
+	// Contains password, clear it out of RAM
+	memset(message->data, 0, strlen((char *)message->data));
+	strcpy((char *)message->data, "password");
 
 	bool ssl = false;
 	if (strcmp(uri->scheme, "imap") == 0) {
@@ -131,6 +134,7 @@ void handle_imap_cap(struct imap_connection *imap, void *data,
 						"AUTHENTICATE PLAIN %s", enc);
 				free(enc);
 				free(buf);
+				memset(imap->uri->password, 0, strlen(imap->uri->password));
 			}
 		}
 	} else if (imap->cap->auth_login) {
@@ -138,6 +142,7 @@ void handle_imap_cap(struct imap_connection *imap, void *data,
 			imap->logged_in = true;
 			imap_send(imap, handle_imap_logged_in, pipe, "LOGIN \"%s\" \"%s\"",
 					imap->uri->username, imap->uri->password);
+			memset(imap->uri->password, 0, strlen(imap->uri->password));
 		}
 	} else if (imap->cap->starttls) {
 		imap_send(imap, imap_starttls_callback, pipe, "STARTTLS");

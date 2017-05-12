@@ -74,8 +74,8 @@ bool parse_uri(struct uri *res, const char *src) {
 		if (strchr(res->username, ':')) {
 			// password
 			at = strchr(res->username, ':');
-			*at = '\0';
 			res->password = strdup(at + 1);
+			memset(at, 0, strlen(at));
 		}
 	}
 	if (strchr(res->hostname, ':')) {

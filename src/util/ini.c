@@ -153,6 +153,7 @@ int ini_parse_stream(ini_reader reader, void* stream, ini_handler handler,
                 strncpy0(prev_name, name, sizeof(prev_name));
                 if (!handler(user, section, name, value) && !error)
                     error = lineno;
+				memset(value, 0, strlen(value));
             }
             else if (!error) {
                 /* No '=' or ':' found on name[=:]value line */

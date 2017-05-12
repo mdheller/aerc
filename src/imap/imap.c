@@ -119,8 +119,13 @@ void imap_send(struct imap_connection *imap, imap_callback_t callback,
 
 	if (strncmp("LOGIN ", buf, 6) == 0) {
 		worker_log(L_DEBUG, "-> %s LOGIN *****", tag);
+		memset(buf, 0, strlen(buf));
+		memset(cmd, 0, strlen(cmd));
 	} else if (strncmp("AUTHENTICATE ", buf, 13) == 0) {
 		worker_log(L_DEBUG, "-> %s AUTHENTICATE *****", tag);
+		memset(buf, 0, strlen(buf));
+		memset(cmd, 0, strlen(cmd));
+		worker_log(L_DEBUG, "Note: core dumps do not include your password past this point");
 	} else {
 		worker_log(L_DEBUG, "-> %s %s", tag, buf);
 	}
