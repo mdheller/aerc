@@ -28,8 +28,7 @@ void imap_fetch(struct imap_connection *imap, imap_callback_t callback,
 	// individually
 	bool seperate = false;
 
-	char *selected = imap->selecting ? imap->selecting : imap->selected;
-	struct mailbox *mbox = get_mailbox(imap, selected);
+	struct mailbox *mbox = get_mailbox(imap, imap->selected);
 	assert(min >= 1);
 	assert(max <= mbox->messages->length);
 	assert(min <= max);
@@ -112,6 +111,9 @@ static void handle_body_content(struct message_part *part, imap_arg_t *args) {
 		if (strcasecmp(param->key, "charset") == 0) {
 			if (strcasecmp(param->value, "UTF-8") == 0) {
 				// no further action necessary
+			} else if (strcasecmp(param->value, "iso-8859-1") == 0) {
+				int len = iso_8859_1_to_utf8(&part->content, part->size);
+				part->size = len;
 			} else if (strcasecmp(param->value, "us-ascii") == 0) {
 				// no further action necessary
 			} else {
@@ -252,7 +254,7 @@ static int handle_bodystructure(struct mailbox_message *msg, imap_arg_t *args) {
 void handle_imap_fetch(struct imap_connection *imap, const char *token,
 		const char *cmd, imap_arg_t *args) {
 	assert(args->type == IMAP_NUMBER);
-	char *selected = imap->selecting ? imap->selecting : imap->selected;
+	char *selected = imap->selected;
 	struct mailbox *mbox = get_mailbox(imap, selected);
 	int index = args->num - 1;
 	struct mailbox_message *msg = mbox->messages->items[index];
