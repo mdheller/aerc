@@ -16,5 +16,6 @@ void request_fetch(struct aerc_message *message);
 bool ui_tick();
 int tb_printf(int x, int y, struct tb_cell *basis, const char *fmt, ...);
 void add_loading(struct geometry geo);
+void message_view_geometry(struct geometry *geo);
 
 #endif

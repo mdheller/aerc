@@ -16,9 +16,13 @@ struct account_config {
 	list_t *extras;
 };
 
-struct mime_handler {
-	char *mimetype;
+struct mimetype {
+	char *type;
 	char *subtype;
+};
+
+struct mime_handler {
+	struct mimetype mime;
 	char *command;
 };
 

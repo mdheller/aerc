@@ -89,27 +89,51 @@ static int handle_show_headers(struct aerc_config *config, const char *value) {
 	return 1;
 }
 
+static bool parse_mime(struct mimetype *mime, const char *key) {
+	char *_ = strchr(key, '_');
+	if (!_) {
+		return false;
+	}
+	int i = _ - key + 1;
+	mime->type = malloc(i);
+	strncpy(mime->type, key, _ - key);
+	mime->type[i] = '\0';
+	mime->subtype = strdup(&key[i]);
+	return true;
+}
+
 static int handle_viewer_option(struct aerc_config *config,
 		const char *key, const char *value) {
-	char *_;
 	if (strcasecmp(key, "pager") == 0) {
 		config->viewer.pager = strdup(value);
 	} else if (strcasecmp(key, "alternatives") == 0) {
 		if (config->viewer.alternatives) {
 			free_flat_list(config->viewer.alternatives);
+			config->viewer.alternatives = create_list();
 		}
-		config->viewer.alternatives = split_string(value, ",");
-	} else if ((_ = strchr(key, '/'))) {
-		struct mime_handler *mime = calloc(1, sizeof(struct mime_handler));
-		mime->command = strdup(value);
-		int i = _ - key + 1;
-		mime->mimetype = malloc(i);
-		strncpy(mime->mimetype, key, _ - key);
-		mime->mimetype[i] = '\0';
-		mime->subtype = strdup(&key[i]);
+		list_t *alternatives = split_string(value, ",");
+		for (size_t i = 0; i < alternatives->length; ++i) {
+			char *alt = alternatives->items[i];
+			struct mimetype *mime = calloc(1, sizeof(struct mimetype));
+			if (!parse_mime(mime, alt)) {
+				worker_log(L_ERROR, "Invalid mimetype %s", alt);
+				free_flat_list(alternatives);
+				return 1;
+			}
+			list_add(config->viewer.alternatives, mime);
+		}
+		free_flat_list(alternatives);
+	} else if (strchr(key, '/')) {
+		struct mime_handler *handler = calloc(1, sizeof(struct mime_handler));
+		handler->command = strdup(value);
+		if (!parse_mime(&handler->mime, key)) {
+			worker_log(L_ERROR, "Invalid mimetype %s", key);
+			free(handler);
+			return 1;
+		}
 		worker_log(L_DEBUG, "Registered mimetype handler %s/%s=%s",
-				mime->mimetype, mime->subtype, mime->command);
-		list_add(config->viewer.mime_handlers, mime);
+				handler->mime.type, handler->mime.subtype, handler->command);
+		list_add(config->viewer.mime_handlers, handler);
 	} else {
 		worker_log(L_ERROR, "Invalid config option [viewer]%s", key);
 	}

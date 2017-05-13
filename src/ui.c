@@ -185,13 +185,16 @@ static void rerender_status_bar() {
 	render_status(geo);
 }
 
+void message_view_geometry(struct geometry *geo) {
+	geo->x = config->ui.sidebar_width;
+	geo->y = 1;
+	geo->width = tb_width() - config->ui.sidebar_width;
+	geo->height = tb_height() - 2;
+}
+
 static void rerender_message_view() {
-	struct geometry geo = {
-		.x = config->ui.sidebar_width,
-		.y = 1,
-		.width = tb_width() - config->ui.sidebar_width,
-		.height = tb_height() - 2
-	};
+	struct geometry geo;
+	message_view_geometry(&geo);
 	state->panels.message_view = geo;
 	render_message_view(geo);
 }

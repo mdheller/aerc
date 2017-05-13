@@ -30,6 +30,8 @@ struct subprocess {
 	struct io_capture *io_stdin;
 	struct io_capture *io_stdout;
 	struct io_capture *io_stderr;
+	void *user;
+	void (*complete)(struct subprocess *subp);
 };
 
 struct subprocess *subprocess_init(char **argv, bool pty);
