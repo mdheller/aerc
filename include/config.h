@@ -18,6 +18,7 @@ struct account_config {
 
 struct mime_handler {
 	char *mimetype;
+	char *subtype;
 	char *command;
 };
 

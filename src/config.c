@@ -89,6 +89,33 @@ static int handle_show_headers(struct aerc_config *config, const char *value) {
 	return 1;
 }
 
+static int handle_viewer_option(struct aerc_config *config,
+		const char *key, const char *value) {
+	char *_;
+	if (strcasecmp(key, "pager") == 0) {
+		config->viewer.pager = strdup(value);
+	} else if (strcasecmp(key, "alternatives") == 0) {
+		if (config->viewer.alternatives) {
+			free_flat_list(config->viewer.alternatives);
+		}
+		config->viewer.alternatives = split_string(value, ",");
+	} else if ((_ = strchr(key, '/'))) {
+		struct mime_handler *mime = calloc(1, sizeof(struct mime_handler));
+		mime->command = strdup(value);
+		int i = _ - key + 1;
+		mime->mimetype = malloc(i);
+		strncpy(mime->mimetype, key, _ - key);
+		mime->mimetype[i] = '\0';
+		mime->subtype = strdup(&key[i]);
+		worker_log(L_DEBUG, "Registered mimetype handler %s/%s=%s",
+				mime->mimetype, mime->subtype, mime->command);
+		list_add(config->viewer.mime_handlers, mime);
+	} else {
+		worker_log(L_ERROR, "Invalid config option [viewer]%s", key);
+	}
+	return 1;
+}
+
 int handle_config_option(void *_config, const char *section,
 		const char *key, const char *value) {
 	struct aerc_config *config = _config;
@@ -101,9 +128,7 @@ int handle_config_option(void *_config, const char *section,
 	struct { const char *section; const char *key; char **string; } strings[] = {
 		{ "ui", "index-format", &config->ui.index_format },
 		{ "ui", "timestamp-format", &config->ui.timestamp_format },
-		{ "ui", "render-account-tabs", &config->ui.render_account_tabs },
-		{ "viewer", "pager", &config->viewer.pager },
-		// TODO: Other viewer stuff
+		{ "ui", "render-account-tabs", &config->ui.render_account_tabs }
 	};
 	struct { const char *section; const char *key; int *value; } integers[] = {
 		{ "ui", "sidebar-width", &config->ui.sidebar_width },
@@ -121,6 +146,10 @@ int handle_config_option(void *_config, const char *section,
 	if (strcmp(section, "colors") == 0) {
 		set_color(key, value);
 		return 1;
+	}
+
+	if (strcmp(section, "viewer") == 0) {
+		return handle_viewer_option(config, key, value);
 	}
 
 	if (strcmp(section, "lbinds") == 0 || strcmp(section, "mbinds") == 0) {
@@ -288,10 +317,10 @@ static void config_defaults(struct aerc_config *config) {
 	config->ui.sidebar_width = 20;
 	config->ui.preview_height = 12;
 
-	config->viewer.pager = strdup("less -R");
+	config->viewer.pager = strdup("less -r");
 	config->viewer.alternatives = create_list();
-	list_add(config->viewer.alternatives, "text/plain");
-	list_add(config->viewer.alternatives, "text/html");
+	list_add(config->viewer.alternatives, strdup("text/plain"));
+	list_add(config->viewer.alternatives, strdup("text/html"));
 	config->viewer.mime_handlers = create_list();
 }
 
