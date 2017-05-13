@@ -14,7 +14,10 @@
 
 void handle_imap_flags(struct imap_connection *imap, const char *token,
 		const char *cmd, imap_arg_t *args) {
-	char *selected = imap->selecting ? imap->selecting : imap->selected;
+	char *selected = imap->selected;
+	if (imap->select_queue->length) {
+		selected = list_peek(imap->select_queue);
+	}
 	struct mailbox *mbox = get_mailbox(imap, selected);
 	free_flat_list(mbox->flags);
 	mbox->flags = create_list();

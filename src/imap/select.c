@@ -33,8 +33,7 @@ static void imap_select_callback(struct imap_connection *imap,
 	if (imap->selected) {
 		free(imap->selected);
 	}
-	imap->selected = imap->selecting;
-	imap->selecting = NULL;
+	imap->selected = list_pop(imap->select_queue);
 	if (status == STATUS_OK) {
 		mbox->selected = true;
 	}
@@ -54,11 +53,11 @@ void imap_select(struct imap_connection *imap, imap_callback_t callback,
 		callback(imap, data, STATUS_PRE_ERROR, "Cannot select this mailbox");
 		return;
 	}
-	imap->selecting = strdup(mailbox);
 	struct callback_data *cbdata = malloc(sizeof(struct callback_data));
 	cbdata->data = data;
 	cbdata->mailbox = strdup(mailbox);
 	cbdata->callback = callback;
+	list_enqueue(imap->select_queue, strdup(mailbox));
 	imap_send(imap, imap_select_callback, cbdata, "SELECT \"%s\"", mailbox);
 }
 
@@ -66,7 +65,10 @@ void handle_imap_existsunseenrecent(struct imap_connection *imap, const char *to
 		const char *cmd, imap_arg_t *args) {
 	assert(args);
 	assert(args->type == IMAP_NUMBER);
-	char *selected = imap->selecting ? imap->selecting : imap->selected;
+	char *selected = imap->selected;
+	if (imap->select_queue->length) {
+		selected = list_peek(imap->select_queue);
+	}
 	struct mailbox *mbox = get_mailbox(imap, selected);
 
 	struct { const char *cmd; long *ptr; } ptrs[] = {
@@ -115,14 +117,20 @@ void handle_imap_uidnext(struct imap_connection *imap, const char *token,
 		const char *cmd, imap_arg_t *args) {
 	assert(args);
 	assert(args->type == IMAP_NUMBER);
-	char *selected = imap->selecting ? imap->selecting : imap->selected;
+	char *selected = imap->selected;
+	if (imap->select_queue->length) {
+		selected = list_peek(imap->select_queue);
+	}
 	struct mailbox *mbox = get_mailbox(imap, selected);
 	mbox->nextuid = args->num;
 }
 
 void handle_imap_readwrite(struct imap_connection *imap, const char *token,
 		const char *cmd, imap_arg_t *args) {
-	char *selected = imap->selecting ? imap->selecting : imap->selected;
+	char *selected = imap->selected;
+	if (imap->select_queue->length) {
+		selected = list_peek(imap->select_queue);
+	}
 	struct mailbox *mbox = get_mailbox(imap, selected);
 	mbox->read_write = true;
 	if (imap->events.mailbox_updated) {

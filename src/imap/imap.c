@@ -216,6 +216,7 @@ void imap_init(struct imap_connection *imap) {
 	imap->next_tag = 1;
 	imap->pending = create_hashtable(128, hash_string);
 	imap->mailboxes = create_list();
+	imap->select_queue = create_list();
 	if (internal_handlers == NULL) {
 		internal_handlers = create_hashtable(128, hash_string);
 		hashtable_set(internal_handlers, "OK", handle_imap_status);

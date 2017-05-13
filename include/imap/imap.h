@@ -104,7 +104,8 @@ struct imap_connection {
 	struct imap_state *state;
 	struct uri *uri;
 	list_t *mailboxes;
-	char *selected, *selecting;
+	char *selected;
+	list_t *select_queue;
 };
 
 enum imap_type {
