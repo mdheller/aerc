@@ -8,11 +8,11 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include "imap/imap.h"
 #include "internal/imap.h"
 #include "log.h"
 #include "util/list.h"
+#include "util/stringop.h"
 
 struct callback_data {
 	void *data;
@@ -23,6 +23,7 @@ struct callback_data {
 static void imap_select_callback(struct imap_connection *imap,
 		void *data, enum imap_status status, const char *args) {
 	struct callback_data *cbdata = data;
+	list_pop(imap->select_queue);
 	if (status != STATUS_OK) {
 		if (cbdata->callback) {
 			cbdata->callback(imap, cbdata->data, status, args);
@@ -30,14 +31,16 @@ static void imap_select_callback(struct imap_connection *imap,
 		return;
 	}
 	struct mailbox *mbox = get_mailbox(imap, cbdata->mailbox);
+	mbox->selected = true;
 	if (imap->selected) {
 		free(imap->selected);
 	}
-	imap->selected = list_pop(imap->select_queue);
-	if (status == STATUS_OK) {
-		mbox->selected = true;
-	}
-	if (cbdata->callback) {
+	imap->selected = strdup(cbdata->mailbox);
+	if (imap->select_queue->length) {
+		struct callback_data *_cbdata = list_peek(imap->select_queue);
+		imap_send(imap, imap_select_callback, _cbdata,
+				"SELECT \"%s\"", _cbdata->mailbox);
+	} else if (cbdata->callback) {
 		cbdata->callback(imap, cbdata->data, status, args);
 	}
 	if (imap->events.mailbox_updated) {
@@ -57,18 +60,26 @@ void imap_select(struct imap_connection *imap, imap_callback_t callback,
 	cbdata->data = data;
 	cbdata->mailbox = strdup(mailbox);
 	cbdata->callback = callback;
-	list_enqueue(imap->select_queue, strdup(mailbox));
+	list_enqueue(imap->select_queue, cbdata);
+	if (imap->select_queue->length > 1) {
+		return;
+	}
 	imap_send(imap, imap_select_callback, cbdata, "SELECT \"%s\"", mailbox);
+}
+
+static const char *get_selected(struct imap_connection *imap) {
+	char *selected = imap->selected;
+	if (imap->select_queue->length) {
+		selected = ((struct callback_data *)list_peek(imap->select_queue))->mailbox;
+	}
+	return selected;
 }
 
 void handle_imap_existsunseenrecent(struct imap_connection *imap, const char *token,
 		const char *cmd, imap_arg_t *args) {
 	assert(args);
 	assert(args->type == IMAP_NUMBER);
-	char *selected = imap->selected;
-	if (imap->select_queue->length) {
-		selected = list_peek(imap->select_queue);
-	}
+	const char *selected = get_selected(imap);
 	struct mailbox *mbox = get_mailbox(imap, selected);
 
 	struct { const char *cmd; long *ptr; } ptrs[] = {
@@ -117,23 +128,41 @@ void handle_imap_uidnext(struct imap_connection *imap, const char *token,
 		const char *cmd, imap_arg_t *args) {
 	assert(args);
 	assert(args->type == IMAP_NUMBER);
-	char *selected = imap->selected;
-	if (imap->select_queue->length) {
-		selected = list_peek(imap->select_queue);
-	}
+	const char *selected = get_selected(imap);
 	struct mailbox *mbox = get_mailbox(imap, selected);
 	mbox->nextuid = args->num;
 }
 
 void handle_imap_readwrite(struct imap_connection *imap, const char *token,
 		const char *cmd, imap_arg_t *args) {
-	char *selected = imap->selected;
-	if (imap->select_queue->length) {
-		selected = list_peek(imap->select_queue);
-	}
+	const char *selected = get_selected(imap);
 	struct mailbox *mbox = get_mailbox(imap, selected);
 	mbox->read_write = true;
 	if (imap->events.mailbox_updated) {
 		imap->events.mailbox_updated(imap, mbox);
+	}
+}
+
+void handle_imap_flags(struct imap_connection *imap, const char *token,
+		const char *cmd, imap_arg_t *args) {
+	const char *selected = get_selected(imap);
+	struct mailbox *mbox = get_mailbox(imap, selected);
+	free_flat_list(mbox->flags);
+	mbox->flags = create_list();
+
+	bool perm = strcmp(cmd, "PERMANENTFLAGS") == 0;
+
+	imap_arg_t *flags = args->list;
+	while (flags) {
+		if (flags->type == IMAP_ATOM) {
+			struct mailbox_flag *flag = mailbox_get_flag(imap, mbox->name, flags->str);
+			if (!flag) {
+				flag = calloc(1, sizeof(struct mailbox_flag));
+				flag->name = strdup(flags->str);
+				list_add(mbox->flags, flag);
+			}
+			flag->permanent = perm;
+		}
+		flags = flags->next;
 	}
 }

@@ -265,7 +265,7 @@ void rerender_item(size_t index) {
 	struct account_state *account =
 		state->accounts->items[state->selected_account];
 	struct aerc_mailbox *mailbox = get_aerc_mailbox(account, account->selected);
-	if (index >= mailbox->messages->length) {
+	if (!mailbox || index >= mailbox->messages->length) {
 		return;
 	}
 	int folder_width = config->ui.sidebar_width;
