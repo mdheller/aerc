@@ -192,16 +192,16 @@ void subprocess_queue_stdin(struct subprocess *subp, uint8_t *data, size_t lengt
 
 void subprocess_capture_stdout(struct subprocess *subp) {
 	subp->io_stdout = calloc(sizeof(struct io_capture), 1);
-	subp->io_stdout->size = 256;
+	subp->io_stdout->size = 8192;
 	subp->io_stdout->len = 0;
-	subp->io_stdout->data = malloc(256);
+	subp->io_stdout->data = malloc(8192);
 }
 
 void subprocess_capture_stderr(struct subprocess *subp) {
 	subp->io_stderr = calloc(sizeof(struct io_capture), 1);
-	subp->io_stderr->size = 256;
+	subp->io_stderr->size = 8192;
 	subp->io_stderr->len = 0;
-	subp->io_stderr->data = malloc(256);
+	subp->io_stderr->data = malloc(8192);
 }
 
 void subprocess_pipe(struct subprocess *from, struct subprocess *to) {
@@ -214,9 +214,9 @@ static int update_io_capture(int fd, struct io_capture *cap) {
 	if (amt > 0) {
 		cap->len += amt;
 		if (cap->len >= cap->size) {
-			uint8_t *new = realloc(cap->data, cap->size + 1024);
+			uint8_t *new = realloc(cap->data, cap->size * 2);
 			// TODO: OOM handling
-			cap->size = cap->size + 1024;
+			cap->size = cap->size * 2;
 			cap->data = new;
 		}
 	}
@@ -224,7 +224,7 @@ static int update_io_capture(int fd, struct io_capture *cap) {
 }
 
 static bool subprocess_update_pty(struct pty *pty) {
-	static char buf[1024];
+	static char buf[4096];
 	int r = read(pty->fd, &buf, sizeof(buf));
 	if (r == -1) {
 		if (errno != EAGAIN) {
@@ -240,6 +240,7 @@ static bool subprocess_update_pty(struct pty *pty) {
 }
 
 bool subprocess_update(struct subprocess *subp) {
+	bool activity = false;
 	while (subp->io_fds[0] != -1 && subp->io_stdin && subp->io_stdin->len) {
 		size_t amt = subp->io_stdin->len;
 		int written = write(subp->io_fds[0], subp->io_stdin->data
@@ -272,8 +273,9 @@ bool subprocess_update(struct subprocess *subp) {
 	}
 	if (subp->io_fds[1] != -1 && subp->io_stdout) {
 		int amt = update_io_capture(subp->io_fds[1], subp->io_stdout);
-		if (amt >= 0) {
+		if (amt > 0) {
 			worker_log(L_DEBUG, "Read %d bytes from child %d", amt, subp->pid);
+			activity = true;
 		} else if (errno != EAGAIN) {
 			close(subp->io_fds[1]);
 			subp->io_fds[1] = -1;
@@ -281,8 +283,9 @@ bool subprocess_update(struct subprocess *subp) {
 	}
 	if (subp->io_fds[2] != -1 && subp->io_stderr) {
 		int amt = update_io_capture(subp->io_fds[2], subp->io_stderr);
-		if (amt >= 0) {
+		if (amt > 0) {
 			worker_log(L_DEBUG, "Read %d bytes from child %d", amt, subp->pid);
+			activity = true;
 		} else if (errno != EAGAIN) {
 			close(subp->io_fds[2]);
 			subp->io_fds[2] = -1;
@@ -294,7 +297,7 @@ bool subprocess_update(struct subprocess *subp) {
 		}
 	}
 	int w;
-	if (waitpid(subp->pid, &w, WNOHANG) != 0) {
+	if (!activity && waitpid(subp->pid, &w, WNOHANG) != 0) {
 		bool exited = WIFEXITED(w);
 		if (exited && subp->complete) {
 			subp->complete(subp);
