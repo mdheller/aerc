@@ -101,8 +101,11 @@ static void handle_body_content(struct message_part *part, imap_arg_t *args) {
 			part->size = len;
 		} else if (strcasecmp(part->body_encoding, "base64") == 0) {
 			int len;
-			unbase64((char *)part->content, part->size, &len);
-			part->size = len;
+			char *b64 = (char *)part->content;
+			unsigned char *plain = unbase64(b64, part->size, &len);
+			free(part->content);
+			part->content = plain;
+			part->size = strlen((char *)plain);
 		} else {
 			worker_log(L_ERROR, "Unknown encoding %s. Please report this.", part->body_encoding);
 		}

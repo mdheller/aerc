@@ -29,6 +29,7 @@
 
 */
 
+#include <ctype.h>
 #include "util/base64.h"
 
 static const char* b64="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/" ;
@@ -116,6 +117,16 @@ char* base64( const void* binaryData, int len, int *flen )
   return res ;
 }
 
+static int getnext( const unsigned char *ascii, int *i )
+{
+	int a;
+	do {
+		a = ascii[*i];
+		*i += 1;
+	} while ( isspace(a) );
+	return a;
+}
+
 unsigned char* unbase64( const char* ascii, int len, int *flen )
 {
   const unsigned char *safeAsciiPtr = (const unsigned char*)ascii ;
@@ -142,12 +153,12 @@ unsigned char* unbase64( const char* ascii, int len, int *flen )
     return 0;
   }
   
-  for( charNo=0; charNo <= len - 4 - pad ; charNo+=4 )
+  for( charNo=0; charNo <= len - 4 - pad ; )
   {
-    int A=unb64[safeAsciiPtr[charNo]];
-    int B=unb64[safeAsciiPtr[charNo+1]];
-    int C=unb64[safeAsciiPtr[charNo+2]];
-    int D=unb64[safeAsciiPtr[charNo+3]];
+    int A=unb64[getnext(safeAsciiPtr, &charNo)];
+    int B=unb64[getnext(safeAsciiPtr, &charNo)];
+    int C=unb64[getnext(safeAsciiPtr, &charNo)];
+    int D=unb64[getnext(safeAsciiPtr, &charNo)];
     
     bin[cb++] = (A<<2) | (B>>4) ;
     bin[cb++] = (B<<4) | (C>>2) ;
@@ -156,17 +167,17 @@ unsigned char* unbase64( const char* ascii, int len, int *flen )
   
   if( pad==1 )
   {
-    int A=unb64[safeAsciiPtr[charNo]];
-    int B=unb64[safeAsciiPtr[charNo+1]];
-    int C=unb64[safeAsciiPtr[charNo+2]];
+    int A=unb64[getnext(safeAsciiPtr, &charNo)];
+    int B=unb64[getnext(safeAsciiPtr, &charNo)];
+    int C=unb64[getnext(safeAsciiPtr, &charNo)];
     
     bin[cb++] = (A<<2) | (B>>4) ;
     bin[cb++] = (B<<4) | (C>>2) ;
   }
   else if( pad==2 )
   {
-    int A=unb64[safeAsciiPtr[charNo]];
-    int B=unb64[safeAsciiPtr[charNo+1]];
+    int A=unb64[getnext(safeAsciiPtr, &charNo)];
+    int B=unb64[getnext(safeAsciiPtr, &charNo)];
     
     bin[cb++] = (A<<2) | (B>>4) ;
   }
