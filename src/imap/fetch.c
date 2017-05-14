@@ -95,10 +95,10 @@ static void handle_body_content(struct message_part *part, imap_arg_t *args) {
 	if (part->body_encoding) {
 		if (strcmp(part->body_encoding, "7bit") == 0) {
 			// no further action necessary
-		} else if (strcmp(part->body_encoding, "quoted-printable") == 0) {
+		} else if (strcasecmp(part->body_encoding, "quoted-printable") == 0) {
 			int len = quoted_printable_decode((char *)part->content, part->size);
 			part->size = len;
-		} else if (strcmp(part->body_encoding, "base64") == 0) {
+		} else if (strcasecmp(part->body_encoding, "base64") == 0) {
 			int len;
 			unbase64((char *)part->content, part->size, &len);
 			part->size = len;
