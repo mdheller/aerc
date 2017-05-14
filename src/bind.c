@@ -118,9 +118,6 @@ void add_default_bindings(struct bind *lbinds, struct bind *mbinds) {
 	bind_add(lbinds, "q", ":quit<Enter>");
 	bind_add(lbinds, "<Ctrl+c>", ":quit<Enter>");
 
-	bind_add(lbinds, "h", ":previous-mailbox<Enter>");
-	bind_add(lbinds, "<Left>", ":previous-mailbox<Enter>");
-
 	bind_add(lbinds, "j", ":next-message<Enter>");
 	bind_add(lbinds, "<Down>", ":next-message<Enter>");
 	bind_add(lbinds, "<Ctrl+d>", ":next-message --scroll 50%<Enter>");
@@ -133,9 +130,6 @@ void add_default_bindings(struct bind *lbinds, struct bind *mbinds) {
 	bind_add(lbinds, "<PageUp>", ":previous-message --scroll 100%<Enter>");
 	bind_add(lbinds, "<WheelUp>", ":previous-message --scroll 1<Enter>");
 
-	bind_add(lbinds, "l", ":next-mailbox<Enter>");
-	bind_add(lbinds, "<Right>", ":next-mailbox<Enter>");
-
 	bind_add(lbinds, "J", ":next-folder<Enter>");
 	bind_add(lbinds, "K", ":previous-folder<Enter>");
 	bind_add(lbinds, "g", ":select-message 0<Enter>");
@@ -147,11 +141,11 @@ void add_default_bindings(struct bind *lbinds, struct bind *mbinds) {
 	bind_add(lbinds, "<Enter>", ":view-message<Enter>");
 	bind_add(lbinds, "<Space>", ":view-message<Enter>");
 
-	bind_add(mbinds, "<Ctrl+h>", ":previous-mailbox<Enter>");
-	bind_add(mbinds, "<Left>", ":previous-mailbox<Enter>");
+	bind_add(lbinds, "l", ":next-account<Enter>");
+	bind_add(lbinds, "<Right>", ":next-account<Enter>");
 
-	bind_add(mbinds, "<Ctrl+l>", ":next-mailbox<Enter>");
-	bind_add(mbinds, "<Right>", ":next-mailbox<Enter>");
+	bind_add(mbinds, "h", ":previous-account<Enter>");
+	bind_add(mbinds, "<Left>", ":previous-account<Enter>");
 }
 
 static void init_bind_node(struct bind_node *bn) {

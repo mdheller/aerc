@@ -7,6 +7,7 @@
 #include "config.h"
 #include "state.h"
 #include "ui.h"
+#include "util/unicode.h"
 #include "util/list.h"
 #include "util/stringop.h"
 #include "subprocess.h"
@@ -38,22 +39,24 @@ void render_account_bar(struct geometry geo) {
 	}
 	tb_printf(geo.x, geo.y, &cell, " "); geo.x += 1;
 
-	/* Render account tabs */
-	for (size_t i = 0; i < state->accounts->length; ++i) {
-		struct account_state *account = state->accounts->items[i];
-		if (i == state->selected_account) {
-			get_color("account-selected", &cell);
-		} else {
-			get_color("account-unselected", &cell);
-			if (account->status.status == ACCOUNT_ERROR) {
-				get_color("account-error", &cell);
+	if (state->accounts->length > 1) {
+		/* Render account tabs */
+		for (size_t i = 0; i < state->accounts->length; ++i) {
+			struct account_state *account = state->accounts->items[i];
+			if (i == state->selected_account) {
+				get_color("account-selected", &cell);
+			} else {
+				get_color("account-unselected", &cell);
+				if (account->status.status == ACCOUNT_ERROR) {
+					get_color("account-error", &cell);
+				}
 			}
+			geo.x += tb_printf(geo.x, 0, &cell, " %s ", account->name);
 		}
-		geo.x += tb_printf(geo.x, 0, &cell, " %s ", account->name);
+		get_color("borders", &cell);
+		geo.height = 1;
+		clear_remaining(&cell, geo);
 	}
-	get_color("borders", &cell);
-	geo.height = 1;
-	clear_remaining(&cell, geo);
 }
 
 static int compare_mailboxes(const void *_a, const void *_b) {
@@ -93,9 +96,8 @@ void render_sidebar(struct geometry geo) {
 				get_color("folder-unselected", &cell);
 			}
 			char c = '\0';
-			// TODO: utf-8 strlen
 			// TODO: decode mailbox names according to spec
-			if ((int)strlen(mailbox->name) > geo.width - 1) {
+			if ((int)utf8_strlen(mailbox->name) > geo.width - 1) {
 				mailbox->name[geo.width - 1] = '\0';
 			}
 			int l = tb_printf(geo.x, geo.y, &cell, "%s", mailbox->name);

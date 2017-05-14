@@ -166,9 +166,9 @@ static void rerender_sidebar() {
 static void rerender_message_list() {
 	struct geometry geo = {
 		.x = config->ui.sidebar_width,
-		.y = 1,
+		.y = (state->accounts->length > 1),
 		.width = tb_width() - config->ui.sidebar_width,
-		.height = tb_height() - 2
+		.height = tb_height() - 1 - (state->accounts->length > 1)
 	};
 	state->panels.message_list = geo;
 	render_items(geo);
@@ -187,9 +187,9 @@ static void rerender_status_bar() {
 
 void message_view_geometry(struct geometry *geo) {
 	geo->x = config->ui.sidebar_width;
-	geo->y = 1;
+	geo->y = (state->accounts->length > 1);
 	geo->width = tb_width() - config->ui.sidebar_width;
-	geo->height = tb_height() - 2;
+	geo->height = tb_height() - 1 - (state->accounts->length > 1);
 }
 
 static void rerender_message_view() {
@@ -276,7 +276,8 @@ void rerender_item(size_t index) {
 		.width = tb_width(),
 		.height = tb_height(),
 		.x = folder_width,
-		.y = mailbox->messages->length - account->ui.list_offset - index
+		.y = state->panels.message_list.y +
+			mailbox->messages->length - account->ui.list_offset - (index + 1)
 	};
 	worker_log(L_DEBUG, "Rerendering item %zd at %d", index, geo.y);
 	struct aerc_message *message = mailbox->messages->items[index];

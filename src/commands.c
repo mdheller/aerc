@@ -131,8 +131,11 @@ static void handle_next_account(int argc, char **argv) {
 }
 
 static void handle_previous_account(int argc, char **argv) {
-	state->selected_account--;
-	state->selected_account %= state->accounts->length;
+	if (state->selected_account == 0) {
+		state->selected_account = state->accounts->length - 1;
+	} else {
+		state->selected_account--;
+	}
 	request_rerender(PANEL_ALL);
 }
 

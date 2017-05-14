@@ -30,4 +30,9 @@ int utf8_size(const char *str);
  */
 size_t utf8_chsize(uint32_t ch);
 
+/**
+ * Returns the size of a UTF-8 character
+ */
+size_t utf8_strlen(const char *str);
+
 #endif
