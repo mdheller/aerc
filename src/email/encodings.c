@@ -37,9 +37,11 @@ int quoted_printable_decode(char *data, int len) {
 			if (data[1] == '\r') {
 				len -= 3;
 				memmove(data, data + 3, len - i);
+				data--, i--;
 			} else if (data[1] == '\n') {
 				len -= 2;
 				memmove(data, data + 2, len - i);
+				data--, i--;
 			} else if (isxdigit(data[1]) && isxdigit(data[2]) && sscanf(&data[1], "%2x", &c)) {
 				*data = c;
 				len -= 2;
