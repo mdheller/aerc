@@ -103,6 +103,10 @@ static void handle_body_content(struct message_part *part, imap_arg_t *args) {
 			int len;
 			char *b64 = (char *)part->content;
 			unsigned char *plain = unbase64(b64, part->size, &len);
+			if (!plain) {
+				worker_log(L_ERROR, "Invalid base64 data in message.");
+				return;
+			}
 			free(part->content);
 			part->content = plain;
 			part->size = strlen((char *)plain);
