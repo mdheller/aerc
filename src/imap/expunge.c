@@ -24,6 +24,7 @@ void handle_imap_expunge(struct imap_connection *imap, const char *token,
 		} else if (_msg->index == i) {
 			msg = _msg;
 			list_del(mbox->messages, j);
+			--mbox->exists;
 			--j;
 		}
 	}
