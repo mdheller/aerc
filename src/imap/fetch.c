@@ -265,7 +265,7 @@ void handle_imap_fetch(struct imap_connection *imap, const char *token,
 	char *selected = imap->selected;
 	struct mailbox *mbox = get_mailbox(imap, selected);
 	int index = args->num - 1;
-	struct mailbox_message *msg = mbox->messages->items[index];
+	struct mailbox_message *msg = get_message(mbox, index);
 	worker_log(L_DEBUG, "Received FETCH for message %d", index + 1);
 	args = args->next;
 	assert(args->type == IMAP_LIST);
@@ -301,7 +301,6 @@ void handle_imap_fetch(struct imap_connection *imap, const char *token,
 			args = args->next;
 		}
 	}
-	msg->index = index;
 	msg->fetching = false;
 	msg->populated = true;
 	if (imap->events.message_updated) {

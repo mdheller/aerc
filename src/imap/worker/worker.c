@@ -127,6 +127,14 @@ static void delete_mailbox(struct imap_connection *imap, const char *mailbox) {
 	worker_post_message(pipe, WORKER_MAILBOX_DELETED, NULL, strdup(mailbox));
 }
 
+static void delete_message(struct imap_connection *imap,
+		struct mailbox_message *msg) {
+	struct worker_pipe *pipe = imap->data;
+	struct aerc_message_delete *event = calloc(1, sizeof(struct aerc_message_delete));
+	event->index = msg->index;
+	worker_post_message(pipe, WORKER_MESSAGE_DELETED, NULL, event);
+}
+
 void *imap_worker(void *_pipe) {
 	/* Worker thread main loop */
 	struct worker_pipe *pipe = _pipe;
@@ -137,6 +145,7 @@ void *imap_worker(void *_pipe) {
 	imap->events.mailbox_updated = update_mailbox;
 	imap->events.mailbox_deleted = delete_mailbox;
 	imap->events.message_updated = update_message;
+	imap->events.message_deleted = delete_message;
 	worker_log(L_DEBUG, "Starting IMAP worker");
 	while (1) {
 		bool sleep = true;

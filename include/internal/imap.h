@@ -29,6 +29,8 @@ void handle_imap_readwrite(struct imap_connection *imap, const char *token,
 		const char *cmd, imap_arg_t *args);
 void handle_imap_fetch(struct imap_connection *imap, const char *token,
 		const char *cmd, imap_arg_t *args);
+void handle_imap_expunge(struct imap_connection *imap, const char *token,
+		const char *cmd, imap_arg_t *args);
 
 /* Parses an IMAP argument string and sets "remaining" the number of characters
  * necessary to complete parsing (if the string doesn't represent a complete
@@ -47,6 +49,7 @@ struct mailbox *get_or_make_mailbox(struct imap_connection *imap,
 		const char *name);
 struct mailbox_flag *mailbox_get_flag(struct imap_connection *imap,
 		const char *mbox, const char *flag);
+struct mailbox_message *get_message(struct mailbox *mbox, long index);
 void mailbox_free(struct mailbox *mbox);
 void mailbox_message_free(struct mailbox_message *msg);
 void message_part_free(struct message_part *msg);

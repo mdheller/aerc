@@ -39,19 +39,18 @@ enum worker_message_type {
 	WORKER_LIST,
 	WORKER_LIST_DONE,
 	WORKER_LIST_ERROR,
-	/* Selection */
+	/* Mailboxes */
 	WORKER_SELECT_MAILBOX,
 	WORKER_SELECT_MAILBOX_DONE,
 	WORKER_SELECT_MAILBOX_ERROR,
-	/* Notifications */
+	WORKER_DELETE_MAILBOX,
+	WORKER_MAILBOX_DELETED,
 	WORKER_MAILBOX_UPDATED,
 	/* Messages */
 	WORKER_FETCH_MESSAGES,
 	WORKER_FETCH_MESSAGE_PART,
 	WORKER_MESSAGE_UPDATED,
-	/* Deleting things */
-	WORKER_DELETE_MAILBOX,
-	WORKER_MAILBOX_DELETED,
+	WORKER_MESSAGE_DELETED,
 };
 
 struct worker_pipe {
@@ -81,6 +80,10 @@ struct message_range {
 struct aerc_message_update {
 	char *mailbox;
 	struct aerc_message *message;
+};
+
+struct aerc_message_delete {
+	int index;
 };
 
 struct aerc_message_part {

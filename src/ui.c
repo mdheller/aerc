@@ -576,3 +576,17 @@ bool ui_tick() {
 
 	return !state->exit;
 }
+
+void scroll_selected_into_view() {
+	struct account_state *account =
+		state->accounts->items[state->selected_account];
+	int relative = account->ui.selected_message - account->ui.list_offset;
+	int height = state->panels.message_list.height - 1;
+	if (relative >= height) {
+		account->ui.list_offset += relative - height;
+		request_rerender(PANEL_MESSAGE_LIST);
+	} else if (relative < 0) {
+		account->ui.list_offset += relative;
+		request_rerender(PANEL_MESSAGE_LIST);
+	}
+}

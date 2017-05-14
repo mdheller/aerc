@@ -159,6 +159,38 @@ void handle_worker_message_updated(struct account_state *account,
 	free(update->mailbox);
 }
 
+void handle_worker_message_deleted(struct account_state *account,
+		struct worker_message *message) {
+	struct aerc_message_delete *delete = message->data;
+	struct aerc_mailbox *mbox = get_aerc_mailbox(account, account->selected);
+	struct aerc_message *msg = NULL;
+	worker_log(L_DEBUG, "Deleting message %d (main thread)", delete->index);
+	size_t index = 0;
+	for (size_t i = 0; i < mbox->messages->length; ++i) {
+		struct aerc_message *_msg = mbox->messages->items[i];
+		if (_msg->index > delete->index) {
+			--_msg->index;
+		} else if (_msg->index == delete->index) {
+			msg = _msg;
+			list_del(mbox->messages, i);
+			index = i;
+			--i;
+		}
+	}
+	if (msg) {
+		free_aerc_message(msg);
+		// Note: we need to be careful not to reference the viewer's message
+		// because it could have been freed here
+		if (account->viewer.msg && account->viewer.msg->index == msg->index) {
+			set_status(account, ACCOUNT_OKAY, "This message has been deleted by the server");
+		}
+		if (index == mbox->messages->length - 1) {
+			--account->ui.selected_message;
+		}
+	}
+	request_rerender(PANEL_MESSAGE_LIST);
+}
+
 void handle_worker_mailbox_deleted(struct account_state *account,
 		struct worker_message *message) {
 	worker_log(L_DEBUG, "Deleting mailbox on UI thread");

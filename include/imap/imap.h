@@ -87,6 +87,7 @@ struct imap_connection {
 		void (*mailbox_updated)(struct imap_connection *, struct mailbox *mbox);
 		void (*mailbox_deleted)(struct imap_connection *, const char *name);
 		void (*message_updated)(struct imap_connection *, struct mailbox_message *);
+		void (*message_deleted)(struct imap_connection *, struct mailbox_message *);
 	} events;
 
 	void *data;

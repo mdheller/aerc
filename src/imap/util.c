@@ -54,6 +54,17 @@ struct mailbox_flag *mailbox_get_flag(struct imap_connection *imap,
 	return NULL;
 }
 
+struct mailbox_message *get_message(struct mailbox *mbox, long index) {
+	struct mailbox_message *msg = NULL;
+	for (size_t i = 0; i < mbox->messages->length; ++i) {
+		msg = mbox->messages->items[i];
+		if (msg->index == index) {
+			return msg;
+		}
+	}
+	return NULL;
+}
+
 void message_part_free(struct message_part *msg) {
 	if (!msg) {
 		return;

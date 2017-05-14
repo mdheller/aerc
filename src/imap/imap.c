@@ -74,7 +74,7 @@ int handle_line(struct imap_connection *imap, imap_arg_t *arg) {
 	if (handler) {
 		handler(imap, arg->str, arg->next->str, arg->next->next);
 	} else {
-		worker_log(L_DEBUG, "Recieved unknown IMAP command: %s", arg->str);
+		worker_log(L_DEBUG, "Recieved unknown IMAP command: %s", arg->next->str);
 	}
 	return 0;
 }
@@ -236,6 +236,7 @@ void imap_init(struct imap_connection *imap) {
 		hashtable_set(internal_handlers, "UIDVALIDITY", handle_noop);
 		hashtable_set(internal_handlers, "HIGHESTMODSET", handle_noop); // RFC 4551
 		hashtable_set(internal_handlers, "FETCH", handle_imap_fetch);
+		hashtable_set(internal_handlers, "EXPUNGE", handle_imap_expunge);
 	}
 }
 

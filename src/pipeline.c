@@ -50,9 +50,11 @@ static void subp_complete(struct subprocess *subp) {
 	subp = subprocess_init(argv, true);
 	header_subp = subp;
 	list_foreach(state->msg->headers, add_header);
-	unsigned char *data = malloc(capture->len);
-	memcpy(data, capture->data, capture->len);
-	subprocess_queue_stdin(subp, data, capture->len);
+	if (capture) {
+		unsigned char *data = malloc(capture->len);
+		memcpy(data, capture->data, capture->len);
+		subprocess_queue_stdin(subp, data, capture->len);
+	}
 	state->account->viewer.term = subp;
 	subprocess_start(subp);
 	request_rerender(PANEL_MESSAGE_VIEW);
@@ -112,6 +114,11 @@ static void spawn_subprocess(struct account_state *account,
 	struct subprocess *subp = subprocess_init(argv, false);
 	subp->user = state;
 	subp->complete = subp_complete;
+	if (part->size == 0) {
+		// Don't actually run preprocessor on empty input
+		subp_complete(subp);
+		return;
+	}
 	subprocess_queue_stdin(subp, part->content, part->size);
 	subprocess_capture_stdout(subp);
 	subprocess_capture_stderr(subp);

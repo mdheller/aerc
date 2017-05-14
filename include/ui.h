@@ -17,5 +17,6 @@ bool ui_tick();
 int tb_printf(int x, int y, struct tb_cell *basis, const char *fmt, ...);
 void add_loading(struct geometry geo);
 void message_view_geometry(struct geometry *geo);
+void scroll_selected_into_view();
 
 #endif
