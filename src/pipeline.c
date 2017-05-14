@@ -7,6 +7,7 @@
 #include "config.h"
 #include "subprocess.h"
 #include "email/headers.h"
+#include "util/unicode.h"
 #include "util/list.h"
 #include "state.h"
 #include "worker.h"
@@ -45,7 +46,7 @@ static void subp_complete(struct subprocess *subp) {
 	struct pipeline_state *state = subp->user;
 	struct io_capture *capture = subp->io_stdout;
 
-	char *argv[] = { "sh", "-c", "less -r", NULL };
+	char *argv[] = { "sh", "-c", config->viewer.pager, NULL };
 	subp = subprocess_init(argv, true);
 	header_subp = subp;
 	list_foreach(state->msg->headers, add_header);
@@ -78,7 +79,36 @@ static void spawn_subprocess(struct account_state *account,
 	state->msg = msg;
 	state->part = part;
 
-	char *argv[] = { "sh", "-c", "fold -sw $WIDTH", NULL };
+	// Strip non-printable characters from message
+	// TODO: this actually mutates the "official" copy of the message in memory
+	// maybe we want to copy it somewhere else first or translate it on the fly
+	// or something
+	char *data = (char *)part->content;
+	int i = 0;
+	while (i < part->size) {
+		uint32_t ch = utf8_decode((const char **)&data);
+		int usize = utf8_chsize(ch);
+		i += usize;
+		if ((ch <= 0x1F && ch != '\n' && ch != '\r') || ch == 0x7F || ch == 0x200B) {
+			// Delete these characters
+			memmove(&data[-usize], data, part->size - i);
+			part->size -= usize - 1;
+			data -= usize - 1;
+		}
+	}
+
+	char *argv[] = { "sh", "-c", "cat", NULL };
+	for (size_t i = 0; i < config->viewer.mime_handlers->length; ++i) {
+		struct mime_handler *handler = config->viewer.mime_handlers->items[i];
+		if (strcmp(part->type, handler->mime.type) == 0) {
+			if (strcmp(handler->mime.subtype, "*") == 0 ||
+					strcmp(handler->mime.subtype, part->subtype) == 0) {
+				argv[2] = handler->command;
+				break;
+			}
+		}
+	}
+
 	struct subprocess *subp = subprocess_init(argv, false);
 	subp->user = state;
 	subp->complete = subp_complete;

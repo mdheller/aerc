@@ -90,7 +90,7 @@ static int handle_show_headers(struct aerc_config *config, const char *value) {
 }
 
 static bool parse_mime(struct mimetype *mime, const char *key) {
-	char *_ = strchr(key, '_');
+	char *_ = strchr(key, '/');
 	if (!_) {
 		return false;
 	}
