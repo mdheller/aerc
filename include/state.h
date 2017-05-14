@@ -79,6 +79,7 @@ struct aerc_state {
 		struct geometry message_list;
 		struct geometry message_view;
 		struct geometry status_bar;
+		bool tabs_rendered;
 	} panels;
 	struct bind *lbinds;
 	struct bind *mbinds;

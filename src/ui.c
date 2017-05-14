@@ -166,9 +166,9 @@ static void rerender_sidebar() {
 static void rerender_message_list() {
 	struct geometry geo = {
 		.x = config->ui.sidebar_width,
-		.y = (state->accounts->length > 1),
+		.y = state->panels.tabs_rendered,
 		.width = tb_width() - config->ui.sidebar_width,
-		.height = tb_height() - 1 - (state->accounts->length > 1)
+		.height = tb_height() - 1 - state->panels.tabs_rendered
 	};
 	state->panels.message_list = geo;
 	render_items(geo);
@@ -187,9 +187,9 @@ static void rerender_status_bar() {
 
 void message_view_geometry(struct geometry *geo) {
 	geo->x = config->ui.sidebar_width;
-	geo->y = (state->accounts->length > 1);
+	geo->y = state->panels.tabs_rendered;
 	geo->width = tb_width() - config->ui.sidebar_width;
-	geo->height = tb_height() - 1 - (state->accounts->length > 1);
+	geo->height = tb_height() - 1 - state->panels.tabs_rendered;
 }
 
 static void rerender_message_view() {

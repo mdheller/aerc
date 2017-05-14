@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <termbox.h>
 #include <time.h>
-
 #include "colors.h"
 #include "config.h"
 #include "state.h"
@@ -39,7 +39,14 @@ void render_account_bar(struct geometry geo) {
 	}
 	tb_printf(geo.x, geo.y, &cell, " "); geo.x += 1;
 
-	if (state->accounts->length > 1) {
+	bool render_account_tabs;
+	if (strcasecmp(config->ui.render_account_tabs, "auto") == 0) {
+		render_account_tabs = state->accounts->length > 1;
+	} else {
+		render_account_tabs = strcasecmp(config->ui.render_account_tabs, "on") == 0;
+	}
+	state->panels.tabs_rendered = render_account_tabs;
+	if (render_account_tabs) {
 		/* Render account tabs */
 		for (size_t i = 0; i < state->accounts->length; ++i) {
 			struct account_state *account = state->accounts->items[i];
