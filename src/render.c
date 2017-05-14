@@ -234,9 +234,10 @@ void render_items(struct geometry geo) {
 		return;
 	}
 
+	int limit = geo.height + geo.y;
 	int selected = mailbox->messages->length - account->ui.selected_message - 1;
 	for (int i = mailbox->messages->length - account->ui.list_offset - 1;
-			i >= 0 && geo.y <= geo.height;
+			i >= 0 && geo.y < limit;
 			--i, ++geo.y) {
 		struct aerc_message *message = mailbox->messages->items[i];
 		const char *subject = get_message_header(message, "Subject");
