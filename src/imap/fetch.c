@@ -20,6 +20,7 @@
 #include "util/list.h"
 #include "util/stringop.h"
 #include "util/base64.h"
+#include "util/iconv.h"
 
 void imap_fetch(struct imap_connection *imap, imap_callback_t callback,
 		void *data, size_t min, size_t max, const char *what) {
@@ -124,7 +125,14 @@ static void handle_body_content(struct message_part *part, imap_arg_t *args) {
 			} else if (strcasecmp(param->value, "us-ascii") == 0) {
 				// no further action necessary
 			} else {
-				worker_log(L_ERROR, "Unknown charset %s. Please report this.", param->value);
+				unsigned char *old = part->content, *new;
+				size_t news;
+				worker_log(L_DEBUG, "Converting message encoding from %s", param->value);
+				if (!(new = iconv_convert4((char *)part->content, param->value, part->size, &news))) {
+					continue;
+				}
+				free(old);
+				part->content = new, part->size = news;
 			}
 		}
 	}
