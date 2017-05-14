@@ -257,6 +257,10 @@ void rerender() {
 						tsm_screen_get_cursor_y(account->viewer.term->pty->screen));
 			}
 		} else {
+			// Fix issues with physical terminals
+			tb_set_cursor(client.width - 1, client.height - 1);
+			tb_present();
+			// End fix
 			tb_set_cursor(TB_HIDE_CURSOR, TB_HIDE_CURSOR);
 		}
 	}
