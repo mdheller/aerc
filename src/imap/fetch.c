@@ -93,7 +93,7 @@ static void handle_body_content(struct message_part *part, imap_arg_t *args) {
 	memcpy(part->content, args->str, part->size);
 	worker_log(L_DEBUG, "Received message body");
 	if (part->body_encoding) {
-		if (strcmp(part->body_encoding, "7bit") == 0) {
+		if (strcasecmp(part->body_encoding, "7bit") == 0) {
 			// no further action necessary
 		} else if (strcasecmp(part->body_encoding, "quoted-printable") == 0) {
 			int len = quoted_printable_decode((char *)part->content, part->size);
