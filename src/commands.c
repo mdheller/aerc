@@ -277,19 +277,14 @@ static void handle_term_exec(int argc, char **argv) {
 }
 
 static void handle_confirm(int argc, char **argv) {
-	char *exec = join_args(argv, argc);
-	char end[] = "? [y/n]";
-	char start[] = "Confirm ";
-	char *base;
+	char *exec = join_args(argv + 1, argc - 1);
+	char *arg = strdup(*argv);
 
-	base = malloc(sizeof(char) * (strlen(end) + strlen(start)
-				     + strlen(exec)));
+	if (exec[0] == ':') {
+		    memmove(exec, exec + 1, strlen(exec));
+	}
 
-	strcpy(base, start);
-	strcat(base, exec);
-	strcat(base, end);
-
-	state->confirm.prompt = base;
+	state->confirm.prompt = arg;
 	state->confirm.command = exec;
 }
 
