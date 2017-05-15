@@ -1,68 +1,93 @@
+#define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#include <strings.h>
 #include <stdlib.h>
 
+#include "email/encodings.h"
 #include "email/headers.h"
 #include "log.h"
 #include "util/list.h"
 #include "util/base64.h"
+#include "util/iconv.h"
 
-static int handle_base64(char *input, int len) {
-	int flen;
-	unsigned char *result = unbase64(input, len, &flen);
-	memcpy(input, (char *)result, flen);
-	free(result);
-	return flen;
+static void strapp(char **stringp, char *str, size_t n) {
+	if (!str || !*str || !stringp)
+		return;
+	size_t m = *stringp ? strlen(*stringp) : 0;
+	*stringp = realloc(*stringp, m + n + 1);
+	memcpy(*stringp + m, str, n);
+	(*stringp)[m + n] = 0;
 }
 
-static int handle_q(char *input, int len) {
-	for (int i = 0; i < len && input[i]; ++i) {
-		if (input[i] == '_') {
-			input[i] = ' ';
-		} else if (input[i] == '=') {
-			char temp = input[i + 3];
-			input[i + 3] = '\0';
-			char val = (char)strtol(input + i + 1, NULL, 16);
-			input[i + 3] = temp;
-			input[i] = val;
-			memmove(&input[i + 1], &input[i + 3], len - i - 3);
-			len -= 2;
-		}
-	}
-	return len;
-}
-
-static void decode_rfc1342(char *input) {
-	for (int i = 0; input[i]; ++i) {
-		if (strstr(&input[i], "=?") == &input[i]) {
-			char *start = &input[i];
+static char *decode_rfc1342(char *input) {
+	char *res = NULL, *p, *cur;
+	for (cur = input; *cur;) {
+		p = strstr(cur, "=?");
+		if (!p) {
+			strapp(&res, cur, strlen(cur));
+			break;
+		} else if (p == cur) {
+			char *start = cur;
 			char *charset = start + 2;
-			// TODO: Convert from whatever charset to utf-8 (or native)
 			char *encoding = strchr(charset, '?');
 			if (!encoding) {
+				strapp(&res, cur, charset - cur);
+				cur = charset;
 				continue;
 			}
 			encoding++;
 			if (encoding[1] != '?') {
+				strapp(&res, cur, encoding - cur);
+				cur = encoding;
 				continue;
 			}
 			char *data = encoding + 2;
 			char *end = strstr(data, "?=");
+			if (!end) {
+				strapp(&res, cur, strlen(cur));
+				break;
+			}
+			char *buf;
 			int len;
 			if (tolower(encoding[0]) == 'b') {
-				len = handle_base64(data, end - data);
+				buf = (char *)unbase64(data, end - data, &len);
 			} else if (tolower(encoding[0]) == 'q') {
-				len = handle_q(data, end - data);
+				buf = calloc(1, end - data + 1);
+				memcpy(buf, data, end - data);
+				len = quoted_printable_decode(buf, end - data);
+				buf[len] = 0;
 			} else {
+				strapp(&res, cur, end + 2 - cur);
+				cur = end + 2;
 				continue;
 			}
-			int diff = end - data - len;
-			memmove(start, data, strlen(data) + 1);
-			char *_ = start + len + diff + 2;
-			memmove(start + len, _, strlen(_) + 1);
+			*(encoding - 1) = 0;
+			if (!strcasecmp(charset, "utf-8") || !strcasecmp(charset, "us-ascii")) {
+				// everything's fine
+			} else {
+				char *new;
+				if (!(new = (char *)iconv_convert(buf, charset))) {
+					*(encoding - 1) = '?';
+					// leave the header as is, if an unknown encoding is encountered
+					free(buf);
+					strapp(&res, cur, end + 2 - cur);
+					cur = end + 2;
+					continue;
+				}
+				buf = new;
+				len = strlen(buf);
+			}
+			*(encoding - 1) = '?';
+			strapp(&res, buf, len);
+			cur = end + 2;
+		} else {
+			strapp(&res, cur, p - cur);
+			cur = p;
 		}
 	}
+	return res;
 }
 
 int parse_headers(const char *headers, list_t *output) {
@@ -119,7 +144,11 @@ int parse_headers(const char *headers, list_t *output) {
 	// Extra decoding here if necessary
 	for (size_t i = 0; i < output->length; ++i) {
 		struct email_header *header = output->items[i];
-		decode_rfc1342(header->value);
+		char *new, *old = header->value;
+		if ((new = decode_rfc1342(header->value))) {
+			header->value = new;
+			free(old);
+		}
 		worker_log(L_DEBUG, "Parsed header: %s: %s", header->key, header->value);
 	}
 	return 0;
