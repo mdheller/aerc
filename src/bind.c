@@ -139,7 +139,7 @@ void add_default_bindings(struct bind *lbinds, struct bind *mbinds) {
 	bind_add(lbinds, "$", ":term-exec ");
 
 	bind_add(lbinds, "<Enter>", ":view-message<Enter>");
-	bind_add(lbinds, "<Space>", ":view-message<Enter>");
+	bind_add(lbinds, "d", ":delete-message<Enter>");
 
 	bind_add(lbinds, "l", ":next-account<Enter>");
 	bind_add(lbinds, "<Right>", ":next-account<Enter>");

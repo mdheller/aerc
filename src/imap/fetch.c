@@ -23,11 +23,10 @@
 
 void imap_fetch(struct imap_connection *imap, imap_callback_t callback,
 		void *data, size_t min, size_t max, const char *what) {
+	bool separate = false;
 	// TODO: More optimal strategy for splitting up a range with intermetient
 	// fetching messages into several sub-ranges instead of sending each
 	// individually
-	bool seperate = false;
-
 	struct mailbox *mbox = get_mailbox(imap, imap->selected);
 	assert(min >= 1);
 	assert(max <= mbox->messages->length);
@@ -35,13 +34,13 @@ void imap_fetch(struct imap_connection *imap, imap_callback_t callback,
 	for (size_t i = min; i < max; ++i) {
 		struct mailbox_message *msg = mbox->messages->items[i - 1];
 		if (msg->fetching) {
-			seperate = true;
+			separate = true;
 			break;
 		}
 		msg->fetching = true;
 	}
 
-	if (seperate && false) {
+	if (separate && false) {
 		// TODO
 	} else {
 		if (min == max) {

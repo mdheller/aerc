@@ -286,6 +286,41 @@ static void handle_close_message(int argc, char **argv) {
 	close_message(account);
 }
 
+static void handle_delete_message(int argc, char **argv) {
+	struct account_state *account =
+		state->accounts->items[state->selected_account];
+	if (argc > 1) {
+		set_status(account, ACCOUNT_ERROR, "Usage: delete-message [n]");
+		return;
+	}
+	size_t requested = account->ui.selected_message;
+	if (argc == 1) {
+		char *end;
+		requested = (size_t)strtol(argv[0], &end, 10);
+		if (end == argv[0] || *end) {
+			set_status(account, ACCOUNT_ERROR, "Usage: delete-message [n]");
+			return;
+		}
+	}
+	close_message(account);
+	struct aerc_mailbox *mbox = get_aerc_mailbox(account, account->selected);
+	if (!mbox) {
+		return;
+	}
+	if (requested > mbox->messages->length) {
+		set_status(account, ACCOUNT_ERROR, "Requested message is out of range.");
+		return;
+	}
+	requested = mbox->messages->length - requested - 1;
+	size_t *req = malloc(sizeof(size_t));
+	memcpy(req, &requested, sizeof(size_t));
+	worker_post_action(account->worker.pipe, WORKER_DELETE_MESSAGE, NULL, req);
+	if (requested == 0) {
+		--account->ui.selected_message;
+	}
+	request_rerender(PANEL_MESSAGE_LIST);
+}
+
 struct cmd_handler {
 	char *command;
 	void (*handler)(int argc, char **argv);
@@ -296,6 +331,7 @@ struct cmd_handler cmd_handlers[] = {
 	{ "cd", handle_cd },
 	{ "close-message", handle_close_message },
 	{ "delete-mailbox", handle_delete_mailbox },
+	{ "delete-message", handle_delete_message },
 	{ "exit", handle_quit },
 	{ "next-account", handle_next_account },
 	{ "next-folder", handle_next_folder },
