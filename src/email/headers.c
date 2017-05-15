@@ -56,7 +56,7 @@ static char *decode_rfc1342(char *input) {
 			} else if (tolower(encoding[0]) == 'q') {
 				buf = calloc(1, end - data + 1);
 				memcpy(buf, data, end - data);
-				len = quoted_printable_decode(buf, end - data);
+				len = quoted_printable_decode(buf, end - data, QP_HEADERS);
 				buf[len] = 0;
 			} else {
 				strapp(&res, cur, end + 2 - cur);

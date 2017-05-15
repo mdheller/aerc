@@ -97,7 +97,7 @@ static void handle_body_content(struct message_part *part, imap_arg_t *args) {
 			strcasecmp(part->body_encoding, "8bit") == 0) {
 			// no further action necessary
 		} else if (strcasecmp(part->body_encoding, "quoted-printable") == 0) {
-			int len = quoted_printable_decode((char *)part->content, part->size);
+			int len = quoted_printable_decode((char *)part->content, part->size, QP_BODY);
 			part->size = len;
 		} else if (strcasecmp(part->body_encoding, "base64") == 0) {
 			size_t len;

@@ -24,7 +24,7 @@ int iso_8859_1_to_utf8(unsigned char **data, int len) {
 	return new_len;
 }
 
-int quoted_printable_decode(char *data, int len) {
+int quoted_printable_decode(char *data, int len, int qp_flavor) {
 	if (!data) {
 		return -1;
 	}
@@ -32,7 +32,9 @@ int quoted_printable_decode(char *data, int len) {
 		if (!*data) {
 			break;
 		}
-		if (*data == '=' && len - i >= 1) {
+		if (*data == '_' && qp_flavor == QP_HEADERS) {
+			*data = ' ';
+		} else if (*data == '=' && len - i >= 1) {
 			int c;
 			if (data[1] == '\r') {
 				len -= 3;
