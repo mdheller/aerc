@@ -329,9 +329,7 @@ static void handle_delete_message(int argc, char **argv) {
 	size_t *req = malloc(sizeof(size_t));
 	memcpy(req, &requested, sizeof(size_t));
 	worker_post_action(account->worker.pipe, WORKER_DELETE_MESSAGE, NULL, req);
-	if (requested == 0) {
-		--account->ui.selected_message;
-	}
+	handle_command("next-message");
 	request_rerender(PANEL_MESSAGE_LIST);
 }
 
