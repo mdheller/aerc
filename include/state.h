@@ -83,6 +83,10 @@ struct aerc_state {
 	} panels;
 	struct bind *lbinds;
 	struct bind *mbinds;
+	struct {
+		char *command;
+		char *prompt;
+	} confirm;
 };
 
 extern struct aerc_state *state;

@@ -276,6 +276,23 @@ static void handle_term_exec(int argc, char **argv) {
 	request_rerender(PANEL_MESSAGE_VIEW);
 }
 
+static void handle_confirm(int argc, char **argv) {
+	char *exec = join_args(argv, argc);
+	char end[] = "? [y/n]";
+	char start[] = "Confirm ";
+	char *base;
+
+	base = malloc(sizeof(char) * (strlen(end) + strlen(start)
+				     + strlen(exec)));
+
+	strcpy(base, start);
+	strcat(base, exec);
+	strcat(base, end);
+
+	state->confirm.prompt = base;
+	state->confirm.command = exec;
+}
+
 static void handle_close_message(int argc, char **argv) {
 	struct account_state *account =
 		state->accounts->items[state->selected_account];
@@ -295,6 +312,7 @@ struct cmd_handler {
 struct cmd_handler cmd_handlers[] = {
 	{ "cd", handle_cd },
 	{ "close-message", handle_close_message },
+	{ "confirm", handle_confirm },
 	{ "delete-mailbox", handle_delete_mailbox },
 	{ "exit", handle_quit },
 	{ "next-account", handle_next_account },

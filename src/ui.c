@@ -435,6 +435,20 @@ static void process_event(struct tb_event* event, aqueue_t *event_queue) {
 		request_rerender(PANEL_ALL);
 		break;
 	case TB_EVENT_KEY:
+		if (state->confirm.prompt != NULL) {
+			if (event->ch == 'y') {
+				handle_command(state->confirm.command);
+				state->confirm.prompt = NULL;
+				state->confirm.command = NULL;
+				request_rerender(PANEL_STATUS_BAR);
+			}
+			if (event->ch == 'n') {
+				state->confirm.prompt = NULL;
+				state->confirm.command = NULL;
+				request_rerender(PANEL_STATUS_BAR);
+			}
+			return;
+		}
 		if (state->command.text) {
 			switch (event->key) {
 			case TB_KEY_ESC:
