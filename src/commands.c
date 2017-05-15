@@ -280,10 +280,6 @@ static void handle_confirm(int argc, char **argv) {
 	char *exec = join_args(argv + 1, argc - 1);
 	char *arg = strdup(*argv);
 
-	if (exec[0] == ':') {
-		    memmove(exec, exec + 1, strlen(exec));
-	}
-
 	state->confirm.prompt = arg;
 	state->confirm.command = exec;
 }
