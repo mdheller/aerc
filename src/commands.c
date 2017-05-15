@@ -146,11 +146,14 @@ static void handle_next_folder(int argc, char **argv) {
 	i++;
 	i %= account->mailboxes->length;
 	struct aerc_mailbox *next = account->mailboxes->items[i];
-	while (account->config->folders &&
-			list_seq_find(account->config->folders, lenient_strcmp, next->name) == -1) {
-		i++;
-		i %= account->mailboxes->length;
-		next = account->mailboxes->items[i];
+	if (account->config->folders) {
+		while (list_seq_find(account->config->folders,
+					lenient_strcmp, next->name) == -1
+				&& strcmp(next->name, account->selected) != 0) {
+			i++;
+			i %= account->mailboxes->length;
+			next = account->mailboxes->items[i];
+		}
 	}
 	worker_post_action(account->worker.pipe, WORKER_SELECT_MAILBOX,
 			NULL, strdup(next->name));
@@ -179,13 +182,16 @@ static void handle_previous_folder(int argc, char **argv) {
 		i = account->mailboxes->length - 1;
 	}
 	struct aerc_mailbox *next = account->mailboxes->items[i];
-	while (account->config->folders &&
-			list_seq_find(account->config->folders, lenient_strcmp, next->name) == -1) {
-		i--;
-		if (i == -1) {
-			i = account->mailboxes->length - 1;
+	if (account->config->folders) {
+		while (list_seq_find(account->config->folders,
+					lenient_strcmp, next->name) == -1
+				&& strcmp(next->name, account->selected) != 0) {
+			i--;
+			if (i == -1) {
+				i = account->mailboxes->length - 1;
+			}
+			next = account->mailboxes->items[i];
 		}
-		next = account->mailboxes->items[i];
 	}
 	worker_post_action(account->worker.pipe, WORKER_SELECT_MAILBOX,
 			NULL, strdup(next->name));
