@@ -139,7 +139,8 @@ void add_default_bindings(struct bind *lbinds, struct bind *mbinds) {
 	bind_add(lbinds, "$", ":term-exec ");
 
 	bind_add(lbinds, "<Enter>", ":view-message<Enter>");
-	bind_add(lbinds, "d", ":delete-message<Enter>");
+	bind_add(lbinds, "d", ":confirm 'Really delete this message?' ':delete-message<Enter>'<Enter>");
+	bind_add(lbinds, "<Delete>", ":confirm 'Really delete this message?' ':delete-message<Enter>'<Enter>");
 
 	bind_add(lbinds, "l", ":next-account<Enter>");
 	bind_add(lbinds, "<Right>", ":next-account<Enter>");
@@ -351,6 +352,7 @@ enum bind_result bind_add(struct bind* bind, const char* keys, const char* comma
 				break;
 			} else {
 				// Otherwise we just need to overwrite the existing bind.
+				free(next_node->command);
 				next_node->command = strdup(command);
 				result = BIND_SUCCESS;
 				break;

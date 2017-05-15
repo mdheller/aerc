@@ -374,21 +374,21 @@ static void command_delete_word() {
 }
 
 
-static struct tb_event *parse_input_command(const char *input, size_t *consumed) {
-	if (!input[0]) {
+static struct tb_event *parse_input_command(const char **input) {
+	if (!**input) {
 		return NULL;
 	}
 
-	if (input[0] == '<') {
-		const char *term = strchr(input, '>');
+	if (**input == '<') {
+		const char *term = strchr(*input, '>');
 		if (term) {
-			char *buf = strdup(input + 1);
+			char *buf = strdup(*input + 1);
 			*strchr(buf, '>') = 0;
 
 			struct tb_event *e = bind_translate_key_name(buf);
 			free(buf);
 			if (e) {
-				*consumed += 1 + term - input;
+				*input += 1 + term - *input;
 				return e;
 			}
 		}
@@ -396,9 +396,34 @@ static struct tb_event *parse_input_command(const char *input, size_t *consumed)
 
 	struct tb_event *e = calloc(1, sizeof(struct tb_event));
 	e->type = TB_EVENT_KEY;
-	e->ch = input[0];
-	*consumed += 1;
+	e->ch = **input;
+	++*input;
 	return e;
+}
+
+static void simulate_input(aqueue_t *event_queue, const char *input) {
+	struct tb_event *new_event = NULL;
+	bool in_string = false;
+	bool in_char = false;
+	while (*input) {
+		if (*input == '"' && !in_char) {
+			in_string = !in_string;
+		} else if (*input == '\'' && !in_string) {
+			in_char = !in_char;
+		} else if (*input == '\0' || (!in_string && !in_char)) {
+			new_event = parse_input_command(&input);
+			if (!new_event) {
+				break;
+			}
+			aqueue_enqueue(event_queue, new_event);
+			continue;
+		}
+		struct tb_event *e = calloc(1, sizeof(struct tb_event));
+		e->type = TB_EVENT_KEY;
+		e->ch = *input;
+		aqueue_enqueue(event_queue, e);
+		++input;
+	}
 }
 
 static void pass_event_to_command(struct tb_event *event, aqueue_t *event_queue) {
@@ -407,16 +432,7 @@ static void pass_event_to_command(struct tb_event *event, aqueue_t *event_queue)
 	const char* command = bind_handle_key_event(
 		account->viewer.term ? state->mbinds : state->lbinds, event);
 	if (command) {
-		size_t consumed = 0;
-		struct tb_event *new_event = NULL;
-
-		while (1) {
-			new_event = parse_input_command(command + consumed, &consumed);
-			if (!new_event) {
-				break;
-			}
-			aqueue_enqueue(event_queue, new_event);
-		}
+		simulate_input(event_queue, command);
 	} else if (account->viewer.term) {
 		// TODO: communicate from binding handler that we hit a nonexistent
 		// binding and flush all of the keys into the subterm, plus a timeout
@@ -429,17 +445,7 @@ static void pass_event_to_command(struct tb_event *event, aqueue_t *event_queue)
 }
 
 static void confirm_accept(struct tb_event *event, aqueue_t *event_queue) {
-	size_t consumed = 0;
-	struct tb_event *new_event = NULL;
-
-	while (1) {
-		new_event = parse_input_command(state->confirm.command + consumed, &consumed);
-		if (!new_event) {
-			break;
-		}
-		aqueue_enqueue(event_queue, new_event);
-	}
-
+	simulate_input(event_queue, state->confirm.command);
 	state->confirm.prompt = NULL;
 	state->confirm.command = NULL;
 	request_rerender(PANEL_STATUS_BAR);
