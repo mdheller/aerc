@@ -169,7 +169,6 @@ void handle_worker_message_deleted(struct account_state *account,
 	struct aerc_mailbox *mbox = get_aerc_mailbox(account, account->selected);
 	struct aerc_message *msg = NULL;
 	worker_log(L_DEBUG, "Deleting message %d (main thread)", delete->index);
-	size_t index = 0;
 	for (size_t i = 0; i < mbox->messages->length; ++i) {
 		struct aerc_message *_msg = mbox->messages->items[i];
 		if (_msg->index > delete->index) {
@@ -177,7 +176,6 @@ void handle_worker_message_deleted(struct account_state *account,
 		} else if (_msg->index == delete->index) {
 			msg = _msg;
 			list_del(mbox->messages, i);
-			index = i;
 			--i;
 		}
 	}
