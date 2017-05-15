@@ -181,7 +181,10 @@ void render_status(struct geometry geo) {
 	for (int _x = 0; _x < geo.width; ++_x) {
 		tb_put_cell(geo.x + _x, geo.y, &cell);
 	}
-	if (account->status.status == ACCOUNT_OKAY) {
+	if (state->confirm.prompt != NULL) {
+		tb_printf(geo.x, geo.y, &cell, "%s [y/n]", state->confirm.prompt);
+	}
+	else if (account->status.status == ACCOUNT_OKAY) {
 		tb_printf(geo.x, geo.y, &cell, "%s -- %s",
 				account->selected,
 				account->status.text);

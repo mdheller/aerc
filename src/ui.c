@@ -428,6 +428,29 @@ static void pass_event_to_command(struct tb_event *event, aqueue_t *event_queue)
 	}
 }
 
+static void confirm_accept(struct tb_event *event, aqueue_t *event_queue) {
+	size_t consumed = 0;
+	struct tb_event *new_event = NULL;
+
+	while (1) {
+		new_event = parse_input_command(state->confirm.command + consumed, &consumed);
+		if (!new_event) {
+			break;
+		}
+		aqueue_enqueue(event_queue, new_event);
+	}
+
+	state->confirm.prompt = NULL;
+	state->confirm.command = NULL;
+	request_rerender(PANEL_STATUS_BAR);
+}
+
+static void confirm_reject() {
+	state->confirm.prompt = NULL;
+	state->confirm.command = NULL;
+	request_rerender(PANEL_STATUS_BAR);
+}
+
 static void process_event(struct tb_event* event, aqueue_t *event_queue) {
 	static size_t cmd_index = 0;
 	switch (event->type) {
@@ -435,7 +458,25 @@ static void process_event(struct tb_event* event, aqueue_t *event_queue) {
 		request_rerender(PANEL_ALL);
 		break;
 	case TB_EVENT_KEY:
-		if (state->command.text) {
+		if (state->confirm.prompt != NULL) {
+			switch (event->key) {
+			case TB_KEY_ESC:
+			case TB_KEY_CTRL_C:
+				confirm_reject();
+				break;
+			case TB_KEY_ENTER:
+				confirm_accept(event, event_queue);
+				break;
+			default:
+				if (event->ch == 'y' || event->ch == 'Y') {
+					confirm_accept(event, event_queue);
+				}
+				if (event->ch == 'n' || event->ch == 'N') {
+					confirm_reject();
+				}
+			}
+		}
+		else if (state->command.text) {
 			switch (event->key) {
 			case TB_KEY_ESC:
 			case TB_KEY_CTRL_C:
