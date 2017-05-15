@@ -34,7 +34,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-char* base64( const void* binaryData, int len, int *flen );
-unsigned char* unbase64( const char* ascii, int len, int *flen );
+char *b64_encode(const char* binaryData, size_t len, size_t *flen);
+unsigned char *b64_decode(const char *ascii, size_t len, size_t *flen);
 
 #endif

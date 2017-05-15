@@ -20,6 +20,7 @@
 #include "util/list.h"
 #include "util/stringop.h"
 #include "util/base64.h"
+#include "util/iconv.h"
 
 void imap_fetch(struct imap_connection *imap, imap_callback_t callback,
 		void *data, size_t min, size_t max, const char *what) {
@@ -96,12 +97,12 @@ static void handle_body_content(struct message_part *part, imap_arg_t *args) {
 			strcasecmp(part->body_encoding, "8bit") == 0) {
 			// no further action necessary
 		} else if (strcasecmp(part->body_encoding, "quoted-printable") == 0) {
-			int len = quoted_printable_decode((char *)part->content, part->size);
+			int len = quoted_printable_decode((char *)part->content, part->size, QP_BODY);
 			part->size = len;
 		} else if (strcasecmp(part->body_encoding, "base64") == 0) {
-			int len;
+			size_t len;
 			char *b64 = (char *)part->content;
-			unsigned char *plain = unbase64(b64, part->size, &len);
+			unsigned char *plain = b64_decode(b64, part->size, &len);
 			if (!plain) {
 				worker_log(L_ERROR, "Invalid base64 data in message.");
 				return;
@@ -124,7 +125,14 @@ static void handle_body_content(struct message_part *part, imap_arg_t *args) {
 			} else if (strcasecmp(param->value, "us-ascii") == 0) {
 				// no further action necessary
 			} else {
-				worker_log(L_ERROR, "Unknown charset %s. Please report this.", param->value);
+				unsigned char *old = part->content, *new;
+				size_t news;
+				worker_log(L_DEBUG, "Converting message encoding from %s", param->value);
+				if (!(new = iconv_convert4((char *)part->content, param->value, part->size, &news))) {
+					continue;
+				}
+				free(old);
+				part->content = new, part->size = news;
 			}
 		}
 	}
