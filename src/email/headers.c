@@ -50,9 +50,9 @@ static char *decode_rfc1342(char *input) {
 				break;
 			}
 			char *buf;
-			int len;
+			size_t len;
 			if (tolower(encoding[0]) == 'b') {
-				buf = (char *)unbase64(data, end - data, &len);
+				buf = (char *)b64_decode(data, end - data, &len);
 			} else if (tolower(encoding[0]) == 'q') {
 				buf = calloc(1, end - data + 1);
 				memcpy(buf, data, end - data);

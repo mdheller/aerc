@@ -128,8 +128,8 @@ void handle_imap_cap(struct imap_connection *imap, void *data,
 						'\0', imap->uri->username,
 						'\0', imap->uri->password);
 				imap->logged_in = true;
-				int _;
-				char *enc = base64(buf, len, &_);
+				size_t _;
+				char *enc = b64_encode(buf, len, &_);
 				imap_send(imap, handle_imap_logged_in, pipe,
 						"AUTHENTICATE PLAIN %s", enc);
 				free(enc);

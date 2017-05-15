@@ -100,9 +100,9 @@ static void handle_body_content(struct message_part *part, imap_arg_t *args) {
 			int len = quoted_printable_decode((char *)part->content, part->size);
 			part->size = len;
 		} else if (strcasecmp(part->body_encoding, "base64") == 0) {
-			int len;
+			size_t len;
 			char *b64 = (char *)part->content;
-			unsigned char *plain = unbase64(b64, part->size, &len);
+			unsigned char *plain = b64_decode(b64, part->size, &len);
 			if (!plain) {
 				worker_log(L_ERROR, "Invalid base64 data in message.");
 				return;

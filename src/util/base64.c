@@ -1,181 +1,215 @@
 /*
-
-  https://github.com/superwills/NibbleAndAHalf
-  base64.h -- Fast base64 encoding and decoding.
-  version 1.0.0, April 17, 2013 143a
-
-  Copyright (C) 2013 William Sherif
-
-  This software is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this software.
-
-  Permission is granted to anyone to use this software for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
-
-  1. The origin of this software must not be misrepresented; you must not
-     claim that you wrote the original software. If you use this software
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original software.
-  3. This notice may not be removed or altered from any source distribution.
-
-  William Sherif
-  will.sherif@gmail.com
-
-  YWxsIHlvdXIgYmFzZSBhcmUgYmVsb25nIHRvIHVz
-
-*/
+ * Adapted from https://github.com/littlstar/b64.c
+ * License under the MIT License:
+ * Copyright (c) 2014 Little Star Media, Inc.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
 #include <ctype.h>
 #include "util/base64.h"
 
-static const char* b64="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/" ;
+static const char b64_table[] = {
+	'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
+	'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
+	'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
+	'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
+	'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
+	'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+	'w', 'x', 'y', 'z', '0', '1', '2', '3',
+	'4', '5', '6', '7', '8', '9', '+', '/'
+};
 
-// maps A=>0,B=>1..
-static const unsigned char unb64[]={
-  0,   0,   0,   0,   0,   0,   0,   0,   0,   0, //10 
-  0,   0,   0,   0,   0,   0,   0,   0,   0,   0, //20 
-  0,   0,   0,   0,   0,   0,   0,   0,   0,   0, //30 
-  0,   0,   0,   0,   0,   0,   0,   0,   0,   0, //40 
-  0,   0,   0,  62,   0,   0,   0,  63,  52,  53, //50 
- 54,  55,  56,  57,  58,  59,  60,  61,   0,   0, //60 
-  0,   0,   0,   0,   0,   0,   1,   2,   3,   4, //70 
-  5,   6,   7,   8,   9,  10,  11,  12,  13,  14, //80 
- 15,  16,  17,  18,  19,  20,  21,  22,  23,  24, //90 
- 25,   0,   0,   0,   0,   0,   0,  26,  27,  28, //100 
- 29,  30,  31,  32,  33,  34,  35,  36,  37,  38, //110 
- 39,  40,  41,  42,  43,  44,  45,  46,  47,  48, //120 
- 49,  50,  51,   0,   0,   0,   0,   0,   0,   0, //130 
-  0,   0,   0,   0,   0,   0,   0,   0,   0,   0, //140 
-  0,   0,   0,   0,   0,   0,   0,   0,   0,   0, //150 
-  0,   0,   0,   0,   0,   0,   0,   0,   0,   0, //160 
-  0,   0,   0,   0,   0,   0,   0,   0,   0,   0, //170 
-  0,   0,   0,   0,   0,   0,   0,   0,   0,   0, //180 
-  0,   0,   0,   0,   0,   0,   0,   0,   0,   0, //190 
-  0,   0,   0,   0,   0,   0,   0,   0,   0,   0, //200 
-  0,   0,   0,   0,   0,   0,   0,   0,   0,   0, //210 
-  0,   0,   0,   0,   0,   0,   0,   0,   0,   0, //220 
-  0,   0,   0,   0,   0,   0,   0,   0,   0,   0, //230 
-  0,   0,   0,   0,   0,   0,   0,   0,   0,   0, //240 
-  0,   0,   0,   0,   0,   0,   0,   0,   0,   0, //250 
-  0,   0,   0,   0,   0,   0, 
-}; // This array has 256 elements
+char *b64_encode(const char *src, size_t len, size_t *flen) {
+	int i = 0;
+	int j = 0;
+	char *enc = NULL;
+	size_t size = 0;
+	unsigned char buf[4];
+	char tmp[3];
 
-// Converts binary data of length=len to base64 characters.
-// Length of the resultant string is stored in flen
-// (you must pass pointer flen).
-char* base64( const void* binaryData, int len, int *flen )
-{
-  const unsigned char* bin = (const unsigned char*) binaryData ;
-  char* res ;
-  
-  int rc = 0 ; // result counter
-  int byteNo ; // I need this after the loop
-  
-  int modulusLen = len % 3 ;
-  int pad = ((modulusLen&1)<<1) + ((modulusLen&2)>>1) ; // 2 gives 1 and 1 gives 2, but 0 gives 0.
-  
-  *flen = 4*(len + pad)/3 ;
-  res = (char*) malloc( *flen + 1 ) ; // and one for the null
-  if( !res )
-  {
-    return 0;
-  }
-  
-  for( byteNo = 0 ; byteNo <= len-3 ; byteNo+=3 )
-  {
-    unsigned char BYTE0=bin[byteNo];
-    unsigned char BYTE1=bin[byteNo+1];
-    unsigned char BYTE2=bin[byteNo+2];
-    res[rc++]  = b64[ BYTE0 >> 2 ] ;
-    res[rc++]  = b64[ ((0x3&BYTE0)<<4) + (BYTE1 >> 4) ] ;
-    res[rc++]  = b64[ ((0x0f&BYTE1)<<2) + (BYTE2>>6) ] ;
-    res[rc++]  = b64[ 0x3f&BYTE2 ] ;
-  }
-  
-  if( pad==2 )
-  {
-    res[rc++] = b64[ bin[byteNo] >> 2 ] ;
-    res[rc++] = b64[ (0x3&bin[byteNo])<<4 ] ;
-    res[rc++] = '=';
-    res[rc++] = '=';
-  }
-  else if( pad==1 )
-  {
-    res[rc++]  = b64[ bin[byteNo] >> 2 ] ;
-    res[rc++]  = b64[ ((0x3&bin[byteNo])<<4)   +   (bin[byteNo+1] >> 4) ] ;
-    res[rc++]  = b64[ (0x0f&bin[byteNo+1])<<2 ] ;
-    res[rc++] = '=';
-  }
-  
-  res[rc]=0; // NULL TERMINATOR! ;)
-  return res ;
+	// alloc
+	enc = (char *) malloc(1);
+	if (NULL == enc) { return NULL; }
+
+	// parse until end of source
+	while (len--) {
+		// read up to 3 bytes at a time into `tmp'
+		tmp[i++] = *(src++);
+
+		// if 3 bytes read then encode into `buf'
+		if (3 == i) {
+			buf[0] = (tmp[0] & 0xfc) >> 2;
+			buf[1] = ((tmp[0] & 0x03) << 4) + ((tmp[1] & 0xf0) >> 4);
+			buf[2] = ((tmp[1] & 0x0f) << 2) + ((tmp[2] & 0xc0) >> 6);
+			buf[3] = tmp[2] & 0x3f;
+
+			// allocate 4 new byts for `enc` and
+			// then translate each encoded buffer
+			// part by index from the base 64 index table
+			// into `enc' unsigned char array
+			enc = (char *) realloc(enc, size + 4);
+			for (i = 0; i < 4; ++i) {
+				enc[size++] = b64_table[buf[i]];
+			}
+
+			// reset index
+			i = 0;
+		}
+	}
+
+	// remainder
+	if (i > 0) {
+		// fill `tmp' with `\0' at most 3 times
+		for (j = i; j < 3; ++j) {
+			tmp[j] = '\0';
+		}
+
+		// perform same codec as above
+		buf[0] = (tmp[0] & 0xfc) >> 2;
+		buf[1] = ((tmp[0] & 0x03) << 4) + ((tmp[1] & 0xf0) >> 4);
+		buf[2] = ((tmp[1] & 0x0f) << 2) + ((tmp[2] & 0xc0) >> 6);
+		buf[3] = tmp[2] & 0x3f;
+
+		// perform same write to `enc` with new allocation
+		for (j = 0; (j < i + 1); ++j) {
+			enc = (char *) realloc(enc, size + 1);
+			enc[size++] = b64_table[buf[j]];
+		}
+
+		// while there is still a remainder
+		// append `=' to `enc'
+		while ((i++ < 3)) {
+			enc = (char *) realloc(enc, size + 1);
+			enc[size++] = '=';
+		}
+	}
+
+	// Make sure we have enough space to add '\0' character at end.
+	enc = (char *) realloc(enc, size + 1);
+	enc[size] = '\0';
+
+	*flen = size;
+	return enc;
 }
 
-static int getnext( const unsigned char *ascii, int *i )
-{
-	int a;
-	do {
-		a = ascii[*i];
-		*i += 1;
-	} while ( isspace(a) );
-	return a;
-}
+unsigned char *b64_decode(const char *src, size_t len, size_t *decsize) {
+	int i = 0;
+	int j = 0;
+	int l = 0;
+	size_t size = 0;
+	unsigned char *dec = NULL;
+	unsigned char buf[3];
+	unsigned char tmp[4];
 
-unsigned char* unbase64( const char* ascii, int len, int *flen )
-{
-  const unsigned char *safeAsciiPtr = (const unsigned char*)ascii ;
-  unsigned char *bin ;
-  int cb=0;
-  int charNo;
-  int pad = 0 ;
+	// alloc
+	dec = (unsigned char *) malloc(1);
+	if (NULL == dec) { return NULL; }
 
-  if( len < 2 ) { // 2 accesses below would be OOB.
-    // catch empty string, return NULL as result.
-    *flen=0;
-    return 0 ;
-  }
-  if( safeAsciiPtr[ len-1 ]=='=' )  ++pad ;
-  if( safeAsciiPtr[ len-2 ]=='=' )  ++pad ;
-  
-  *flen = 3*len/4 - pad ;
-  bin = (unsigned char*)malloc( *flen ) ;
-  if( !bin )
-  {
-    return 0;
-  }
-  
-  for( charNo=0; charNo <= len - 4 - pad ; )
-  {
-    int A=unb64[getnext(safeAsciiPtr, &charNo)];
-    int B=unb64[getnext(safeAsciiPtr, &charNo)];
-    int C=unb64[getnext(safeAsciiPtr, &charNo)];
-    int D=unb64[getnext(safeAsciiPtr, &charNo)];
-    
-    bin[cb++] = (A<<2) | (B>>4) ;
-    bin[cb++] = (B<<4) | (C>>2) ;
-    bin[cb++] = (C<<6) | (D) ;
-  }
-  
-  if( pad==1 )
-  {
-    int A=unb64[getnext(safeAsciiPtr, &charNo)];
-    int B=unb64[getnext(safeAsciiPtr, &charNo)];
-    int C=unb64[getnext(safeAsciiPtr, &charNo)];
-    
-    bin[cb++] = (A<<2) | (B>>4) ;
-    bin[cb++] = (B<<4) | (C>>2) ;
-  }
-  else if( pad==2 )
-  {
-    int A=unb64[getnext(safeAsciiPtr, &charNo)];
-    int B=unb64[getnext(safeAsciiPtr, &charNo)];
-    
-    bin[cb++] = (A<<2) | (B>>4) ;
-  }
-  
-  return bin ;
+	// parse until end of source
+	while (len--) {
+		// break if char is `=' or not base64 char
+		if ('=' == src[j]) { break; }
+		if (!(isalnum(src[j]) || '+' == src[j] || '/' == src[j])) { break; }
+
+		// read up to 4 bytes at a time into `tmp'
+		tmp[i++] = src[j++];
+
+		// if 4 bytes read then decode into `buf'
+		if (4 == i) {
+			// translate values in `tmp' from table
+			for (i = 0; i < 4; ++i) {
+				// find translation char in `b64_table'
+				for (l = 0; l < 64; ++l) {
+					if (tmp[i] == b64_table[l]) {
+						tmp[i] = l;
+						break;
+					}
+				}
+			}
+
+			// decode
+			buf[0] = (tmp[0] << 2) + ((tmp[1] & 0x30) >> 4);
+			buf[1] = ((tmp[1] & 0xf) << 4) + ((tmp[2] & 0x3c) >> 2);
+			buf[2] = ((tmp[2] & 0x3) << 6) + tmp[3];
+
+			// write decoded buffer to `dec'
+			dec = (unsigned char *) realloc(dec, size + 3);
+			if (dec != NULL){
+				for (i = 0; i < 3; ++i) {
+					dec[size++] = buf[i];
+				}
+			} else {
+				return NULL;
+			}
+
+			// reset
+			i = 0;
+		}
+	}
+
+	// remainder
+	if (i > 0) {
+		// fill `tmp' with `\0' at most 4 times
+		for (j = i; j < 4; ++j) {
+			tmp[j] = '\0';
+		}
+
+		// translate remainder
+		for (j = 0; j < 4; ++j) {
+			// find translation char in `b64_table'
+			for (l = 0; l < 64; ++l) {
+				if (tmp[j] == b64_table[l]) {
+					tmp[j] = l;
+					break;
+				}
+			}
+		}
+
+		// decode remainder
+		buf[0] = (tmp[0] << 2) + ((tmp[1] & 0x30) >> 4);
+		buf[1] = ((tmp[1] & 0xf) << 4) + ((tmp[2] & 0x3c) >> 2);
+		buf[2] = ((tmp[2] & 0x3) << 6) + tmp[3];
+
+		// write remainer decoded buffer to `dec'
+		dec = (unsigned char *) realloc(dec, size + (i - 1));
+		if (dec != NULL){
+			for (j = 0; (j < i - 1); ++j) {
+				dec[size++] = buf[j];
+			}
+		} else {
+			return NULL;
+		}
+	}
+
+	// Make sure we have enough space to add '\0' character at end.
+	dec = (unsigned char *) realloc(dec, size + 1);
+	if (dec != NULL){
+		dec[size] = '\0';
+	} else {
+		return NULL;
+	}
+
+	// Return back the size of decoded string if demanded.
+	if (decsize != NULL) {
+		*decsize = size;
+	}
+
+	return dec;
 }
