@@ -18,6 +18,7 @@
 #include "worker.h"
 #include "pipeline.h"
 #include "subprocess.h"
+#include "commands.h"
 
 void handle_worker_connect_done(struct account_state *account,
 		struct worker_message *message) {
@@ -102,6 +103,9 @@ void handle_worker_mailbox_updated(struct account_state *account,
 			break;
 		}
 	}
+	char buf[64];
+	sprintf(buf, "select-message %ld", new->exists - old->exists);
+	handle_command(buf);
 	free_aerc_mailbox(old);
 	request_rerender(PANEL_MESSAGE_LIST | PANEL_SIDEBAR);
 }
