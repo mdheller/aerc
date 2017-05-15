@@ -144,8 +144,8 @@ void add_default_bindings(struct bind *lbinds, struct bind *mbinds) {
 	bind_add(lbinds, "l", ":next-account<Enter>");
 	bind_add(lbinds, "<Right>", ":next-account<Enter>");
 
-	bind_add(mbinds, "h", ":previous-account<Enter>");
-	bind_add(mbinds, "<Left>", ":previous-account<Enter>");
+	bind_add(mbinds, "<Ctrl+h>", ":previous-account<Enter>");
+	bind_add(mbinds, "<Ctrl+l>", ":next-account<Enter>");
 }
 
 static void init_bind_node(struct bind_node *bn) {
