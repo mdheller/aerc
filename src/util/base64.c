@@ -129,6 +129,7 @@ unsigned char *b64_decode(const char *src, size_t len, size_t *decsize) {
 
 	// parse until end of source
 	while (len--) {
+		if (isspace(src[j])) { j++; continue; }
 		// break if char is `=' or not base64 char
 		if ('=' == src[j]) { break; }
 		if (!(isalnum(src[j]) || '+' == src[j] || '/' == src[j])) { break; }
