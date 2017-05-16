@@ -1,10 +1,9 @@
 #define _POSIX_C_SOURCE 200809L
-
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <strings.h>
 #include "email/headers.h"
 #include "config.h"
 #include "state.h"
@@ -106,7 +105,7 @@ const char *get_message_header(struct aerc_message *msg, char *key) {
 		if (!header->key) {
 			break;
 		}
-		if (strcmp(header->key, key) == 0) {
+		if (strcasecmp(header->key, key) == 0) {
 			return header->value;
 		}
 	}
