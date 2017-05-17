@@ -19,8 +19,6 @@ unsigned char *iconv_convert3(const char *str, const char *from, size_t inlen) {
 	return iconv_convert4(str, from, inlen, &outlen);
 }
 
-static inline size_t min(size_t l, size_t r) { return (l < r) ? l : r; }
-
 unsigned char *iconv_convert4(const char *str, const char *from, size_t inlen, size_t *outlen) {
 	assert(from);
 	unsigned char *out, *_out, *rv;
