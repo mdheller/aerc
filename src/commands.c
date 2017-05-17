@@ -371,7 +371,7 @@ static void handle_move_message(int argc, char **argv) {
 	struct account_state *account =
 		state->accounts->items[state->selected_account];
 	if (argc < 1) {
-		set_status(account, ACCOUNT_ERROR, "Usage: copy-message [destination]");
+		set_status(account, ACCOUNT_ERROR, "Usage: move-message [destination]");
 		return;
 	}
 	size_t requested = account->ui.selected_message;
