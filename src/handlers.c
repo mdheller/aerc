@@ -186,9 +186,6 @@ void handle_worker_message_deleted(struct account_state *account,
 		if (account->viewer.msg && account->viewer.msg->index == msg->index) {
 			set_status(account, ACCOUNT_OKAY, "This message has been deleted by the server");
 		}
-		if (account->ui.selected_message == mbox->messages->length) {
-			--account->ui.selected_message;
-		}
 	}
 	request_rerender(PANEL_MESSAGE_LIST);
 }
