@@ -152,6 +152,8 @@ void imap_create(struct imap_connection *imap, imap_callback_t callback,
 		void *data, const char *mailbox);
 void imap_expunge(struct imap_connection *imap, imap_callback_t callback,
 		void *data);
+void imap_copy(struct imap_connection *imap, imap_callback_t callback,
+		void *data, long index, const char *destination);
 
 enum imap_store_mode {
 	STORE_FLAGS_SET,
