@@ -35,6 +35,7 @@ struct aerc_config {
 		list_t *show_headers;
 		int sidebar_width;
 		int preview_height;
+		char *empty_message;
 	} ui;
 	struct {
 		list_t *mime_handlers;

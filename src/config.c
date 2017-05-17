@@ -152,7 +152,8 @@ int handle_config_option(void *_config, const char *section,
 	struct { const char *section; const char *key; char **string; } strings[] = {
 		{ "ui", "index-format", &config->ui.index_format },
 		{ "ui", "timestamp-format", &config->ui.timestamp_format },
-		{ "ui", "render-account-tabs", &config->ui.render_account_tabs }
+		{ "ui", "render-account-tabs", &config->ui.render_account_tabs },
+		{ "ui", "empty-message", &config->ui.empty_message }
 	};
 	struct { const char *section; const char *key; int *value; } integers[] = {
 		{ "ui", "sidebar-width", &config->ui.sidebar_width },
@@ -340,6 +341,7 @@ static void config_defaults(struct aerc_config *config) {
 	list_add(config->ui.show_headers, strdup("Date"));
 	config->ui.sidebar_width = 20;
 	config->ui.preview_height = 12;
+	config->ui.empty_message = strdup("(no messages)");
 
 	config->viewer.pager = strdup("less -r");
 	config->viewer.alternatives = create_list();

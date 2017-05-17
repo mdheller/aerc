@@ -32,6 +32,7 @@ void colors_init() {
 	set_color("message-list-unselected", "default:default");
 	set_color("message-list-selected-unread", "white:_black");
 	set_color("message-list-unselected-unread", "default:*default");
+	set_color("message-list-empty", "default:default");
 }
 
 const struct {

@@ -243,6 +243,12 @@ void render_items(struct geometry geo) {
 		add_loading(geo);
 		return;
 	}
+	
+	if (mailbox->messages->length == 0) {
+		geo.x += geo.width / 2 - strlen(config->ui.empty_message) / 2;
+		get_color("message-list-empty", &cell);
+		tb_printf(geo.x, geo.y, &cell, config->ui.empty_message);
+	}
 
 	int limit = geo.height + geo.y;
 	int selected = mailbox->messages->length - account->ui.selected_message - 1;
