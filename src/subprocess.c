@@ -14,13 +14,12 @@
 #include <wordexp.h>
 #include <termios.h>
 #include <unistd.h>
-#include <sys/epoll.h>
+#include <poll.h>
 #include <sys/uio.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/wait.h>
-#include <pty.h>
 #include "xkbcommon-keysyms.h"
 #include "ui.h"
 #include "log.h"
