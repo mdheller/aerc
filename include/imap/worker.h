@@ -18,5 +18,6 @@ void handle_worker_fetch_message_part(struct worker_pipe *pipe, struct worker_me
 void handle_worker_delete_mailbox(struct worker_pipe *pipe, struct worker_message *message);
 void handle_worker_delete_message(struct worker_pipe *pipe, struct worker_message *message);
 void handle_worker_copy_message(struct worker_pipe *pipe, struct worker_message *message);
+void handle_worker_move_message(struct worker_pipe *pipe, struct worker_message *message);
 
 #endif

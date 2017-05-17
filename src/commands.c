@@ -367,6 +367,32 @@ static void handle_copy_message(int argc, char **argv) {
 	request_rerender(PANEL_MESSAGE_LIST);
 }
 
+static void handle_move_message(int argc, char **argv) {
+	struct account_state *account =
+		state->accounts->items[state->selected_account];
+	if (argc < 1) {
+		set_status(account, ACCOUNT_ERROR, "Usage: copy-message [destination]");
+		return;
+	}
+	size_t requested = account->ui.selected_message;
+	struct aerc_mailbox *mbox = get_aerc_mailbox(account, account->selected);
+	if (!mbox) {
+		return;
+	}
+	if (requested > mbox->messages->length) {
+		set_status(account, ACCOUNT_ERROR, "Requested message is out of range.");
+		return;
+	}
+	requested = mbox->messages->length - requested - 1;
+	struct aerc_message_move *req = malloc(sizeof(struct aerc_message_move));
+	req->index = requested;
+	req->destination = join_args(argv, argc);
+	set_status(account, ACCOUNT_OKAY, "Moving message to %s", req->destination);
+	worker_post_action(account->worker.pipe, WORKER_MOVE_MESSAGE, NULL, req);
+	handle_command("next-message");
+	request_rerender(PANEL_MESSAGE_LIST);
+}
+
 struct cmd_handler {
 	char *command;
 	void (*handler)(int argc, char **argv);
@@ -378,12 +404,15 @@ struct cmd_handler cmd_handlers[] = {
 	{ "close-message", handle_close_message },
 	{ "confirm", handle_confirm },
 	{ "copy", handle_copy_message },
+	{ "copy-message", handle_copy_message },
 	{ "cp", handle_copy_message },
 	{ "create-mailbox", handle_create_mailbox },
 	{ "delete-mailbox", handle_delete_mailbox },
 	{ "delete-message", handle_delete_message },
 	{ "exit", handle_quit },
 	{ "mkdir", handle_create_mailbox },
+	{ "move-message", handle_move_message },
+	{ "mv", handle_move_message },
 	{ "next-account", handle_next_account },
 	{ "next-folder", handle_next_folder },
 	{ "next-message", handle_next_message },

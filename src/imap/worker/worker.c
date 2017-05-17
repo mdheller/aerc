@@ -34,6 +34,7 @@ struct action_handler handlers[] = {
 	{ WORKER_DELETE_MAILBOX, handle_worker_delete_mailbox },
 	{ WORKER_DELETE_MESSAGE, handle_worker_delete_message },
 	{ WORKER_COPY_MESSAGE, handle_worker_copy_message },
+	{ WORKER_MOVE_MESSAGE, handle_worker_move_message },
 };
 
 void handle_message(struct worker_pipe *pipe, struct worker_message *message) {
