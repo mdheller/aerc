@@ -212,8 +212,17 @@ static void handle_delete_mailbox(int argc, char **argv) {
 	struct account_state *account =
 		state->accounts->items[state->selected_account];
 	char *joined = join_args(argv, argc);
-	// TODO: Are you sure?
 	worker_post_action(account->worker.pipe, WORKER_DELETE_MAILBOX,
+			NULL, strdup(joined));
+	free(joined);
+	request_rerender(PANEL_SIDEBAR | PANEL_MESSAGE_LIST);
+}
+
+static void handle_create_mailbox(int argc, char **argv) {
+	struct account_state *account =
+		state->accounts->items[state->selected_account];
+	char *joined = join_args(argv, argc);
+	worker_post_action(account->worker.pipe, WORKER_CREATE_MAILBOX,
 			NULL, strdup(joined));
 	free(joined);
 	request_rerender(PANEL_SIDEBAR | PANEL_MESSAGE_LIST);
@@ -343,9 +352,11 @@ struct cmd_handler cmd_handlers[] = {
 	{ "cd", handle_cd },
 	{ "close-message", handle_close_message },
 	{ "confirm", handle_confirm },
+	{ "create-mailbox", handle_create_mailbox },
 	{ "delete-mailbox", handle_delete_mailbox },
 	{ "delete-message", handle_delete_message },
 	{ "exit", handle_quit },
+	{ "mkdir", handle_create_mailbox },
 	{ "next-account", handle_next_account },
 	{ "next-folder", handle_next_folder },
 	{ "next-message", handle_next_message },

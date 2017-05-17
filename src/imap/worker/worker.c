@@ -28,6 +28,7 @@ struct action_handler handlers[] = {
 #ifdef USE_OPENSSL
 	{ WORKER_CONNECT_CERT_OKAY, handle_worker_cert_okay },
 #endif
+	{ WORKER_CREATE_MAILBOX, handle_worker_create_mailbox },
 	{ WORKER_FETCH_MESSAGES, handle_worker_fetch_messages },
 	{ WORKER_FETCH_MESSAGE_PART, handle_worker_fetch_message_part },
 	{ WORKER_DELETE_MAILBOX, handle_worker_delete_mailbox },

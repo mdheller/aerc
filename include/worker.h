@@ -27,6 +27,7 @@ enum worker_message_type {
 	WORKER_OOM,
 	WORKER_UNSUPPORTED,
 	WORKER_CONFIGURE,
+	WORKER_ERROR,
 	/* Connection */
 	WORKER_CONNECT,
 	WORKER_CONNECT_DONE,
@@ -44,6 +45,7 @@ enum worker_message_type {
 	WORKER_SELECT_MAILBOX_DONE,
 	WORKER_SELECT_MAILBOX_ERROR,
 	WORKER_DELETE_MAILBOX,
+	WORKER_CREATE_MAILBOX,
 	WORKER_MAILBOX_DELETED,
 	WORKER_MAILBOX_UPDATED,
 	/* Messages */
@@ -52,6 +54,8 @@ enum worker_message_type {
 	WORKER_MESSAGE_UPDATED,
 	WORKER_DELETE_MESSAGE,
 	WORKER_MESSAGE_DELETED,
+	WORKER_MOVE_MESSAGE,
+	WORKER_COPY_MESSAGE,
 };
 
 struct worker_pipe {
@@ -85,6 +89,11 @@ struct aerc_message_update {
 
 struct aerc_message_delete {
 	int index;
+};
+
+struct aerc_message_move {
+	int index;
+	char *destination;
 };
 
 struct aerc_message_part {
