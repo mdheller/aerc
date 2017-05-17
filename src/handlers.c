@@ -186,6 +186,7 @@ void handle_worker_message_deleted(struct account_state *account,
 		if (account->viewer.msg && account->viewer.msg->index == msg->index) {
 			set_status(account, ACCOUNT_OKAY, "This message has been deleted by the server");
 		}
+		handle_command("previous-message");
 	}
 	request_rerender(PANEL_MESSAGE_LIST);
 }
