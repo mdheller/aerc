@@ -131,9 +131,6 @@ static void init_child(struct subprocess *subp) {
 	if (sigprocmask(SIG_SETMASK, &sigset, NULL) < 0) {
 		exit(1);
 	}
-	for (int i = 0; i < SIGUNUSED; ++i) {
-		signal(i, SIG_DFL);
-	}
 	if (subp->pty) {
 		init_child_pty(subp);
 	} else {
