@@ -35,7 +35,7 @@ find_package(CMocka)
 include_directories(
     ${PROJECT_SOURCE_DIR}/include
     ${TERMBOX_INCLUDE_DIRS}
-    ${OPENSSL_INCLUDE_DIRS}
+    ${OPENSSL_INCLUDE_DIR}
 )
 
 FILE(GLOB src ${PROJECT_SOURCE_DIR}/src/*.c)
