@@ -26,9 +26,9 @@ void imap_list_callback(struct imap_connection *imap,
 			struct aerc_mailbox *dest = serialize_mailbox(source);
 			list_add(mboxes, dest);
 		}
-		worker_post_message(data->pipe, WORKER_LIST_DONE, data->message, mboxes);
+		worker_post_message(data->pipe, WORKER_DONE, data->message, mboxes);
 	} else {
-		worker_post_message(data->pipe, WORKER_LIST_ERROR, data->message, NULL);
+		worker_post_message(data->pipe, WORKER_DONE, data->message, NULL);
 	}
 	free(data);
 }

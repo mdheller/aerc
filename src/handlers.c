@@ -22,7 +22,7 @@
 
 void handle_worker_connect_done(struct account_state *account,
 		struct worker_message *message) {
-	worker_post_action(account->worker.pipe, WORKER_LIST, NULL, NULL);
+	worker_post_action(account->worker.pipe, WORKER_LIST, NULL, NULL, NULL, NULL);
 	set_status(account, ACCOUNT_OKAY, "Connected.");
 }
 
@@ -67,7 +67,7 @@ void handle_worker_list_done(struct account_state *account,
 		free(account->selected);
 		account->selected = strdup(wanted);
 		worker_post_action(account->worker.pipe, WORKER_SELECT_MAILBOX,
-				NULL, strdup(wanted));
+				NULL, strdup(wanted), NULL, NULL);
 	}
 	request_rerender(PANEL_MESSAGE_LIST | PANEL_SIDEBAR);
 }
@@ -82,7 +82,7 @@ void handle_worker_connect_cert_check(struct account_state *account,
 #ifdef USE_OPENSSL
 	// TODO: interactive certificate check
 	worker_post_action(account->worker.pipe, WORKER_CONNECT_CERT_OKAY,
-			message, NULL);
+			message, NULL, NULL, NULL);
 #endif
 }
 
@@ -125,7 +125,7 @@ void load_message_viewer(struct account_state *account) {
 				request->index = msg->index;
 				request->part = (int)i;
 				worker_post_action(account->worker.pipe,
-						WORKER_FETCH_MESSAGE_PART, NULL, request);
+						WORKER_FETCH_MESSAGE_PART, NULL, request, NULL, NULL);
 				return;
 			}
 		}

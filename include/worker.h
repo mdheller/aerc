@@ -1,15 +1,13 @@
 #ifndef _WORKER_H
 #define _WORKER_H
-
 #include <stdbool.h>
 #include <stdint.h>
-
 #ifdef USE_OPENSSL
 #include <openssl/ossl_typ.h>
 #endif
-
 #include "util/aqueue.h"
 #include "util/list.h"
+#include "util/hashtable.h"
 
 /* worker.h
  *
@@ -21,29 +19,29 @@
  */
 
 enum worker_message_type {
-	/* Basics */
+	/* A typical transaction goes like this:
+	 * main -> worker: WORKER_*
+	 * main <- worker: WORKER_ACK | WORKER_UNSUPPORTED
+	 * [worker does task]
+	 * main <- worker: WORKER_DONE | WORKER_ERROR
+	 * [main thread runs callbacks]
+	 */
 	WORKER_ACK,
-	WORKER_END,
-	WORKER_OOM,
+	WORKER_DONE,
+	WORKER_ERROR,
+	WORKER_SHUTDOWN,
 	WORKER_UNSUPPORTED,
 	WORKER_CONFIGURE,
-	WORKER_ERROR,
 	/* Connection */
 	WORKER_CONNECT,
-	WORKER_CONNECT_DONE,
-	WORKER_CONNECT_ERROR,
 #ifdef USE_OPENSSL
 	WORKER_CONNECT_CERT_CHECK,
 	WORKER_CONNECT_CERT_OKAY,
 #endif
 	/* Listing */
 	WORKER_LIST,
-	WORKER_LIST_DONE,
-	WORKER_LIST_ERROR,
 	/* Mailboxes */
 	WORKER_SELECT_MAILBOX,
-	WORKER_SELECT_MAILBOX_DONE,
-	WORKER_SELECT_MAILBOX_ERROR,
 	WORKER_DELETE_MAILBOX,
 	WORKER_CREATE_MAILBOX,
 	WORKER_MAILBOX_DELETED,
@@ -59,6 +57,8 @@ enum worker_message_type {
 };
 
 struct worker_pipe {
+	/* Master callbacks */
+	hashtable_t *callbacks;
 	/* Messages from master->worker */
 	aqueue_t *actions;
 	/* Messages from worker->master */
@@ -70,6 +70,14 @@ struct worker_pipe {
 struct worker_message {
 	enum worker_message_type type;
 	struct worker_message *in_response_to;
+	void *data;
+};
+
+typedef void (*worker_callback_t)(struct worker_pipe *pipe, void *data,
+		struct worker_message *result);
+
+struct worker_task {
+	worker_callback_t callback;
 	void *data;
 };
 
@@ -143,7 +151,7 @@ void worker_post_message(struct worker_pipe *pipe,
 void worker_post_action(struct worker_pipe *pipe,
 		enum worker_message_type type,
 		struct worker_message *in_response_to,
-		void *data);
+		void *data, worker_callback_t callback, void *cbdata);
 void worker_message_free(struct worker_message *msg);
 
 #endif

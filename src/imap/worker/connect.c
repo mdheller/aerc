@@ -43,7 +43,7 @@ void handle_worker_connect(struct worker_pipe *pipe, struct worker_message *mess
 	} else if (strcmp(uri->scheme, "imaps") == 0) {
 		ssl = true;
 	} else {
-		worker_post_message(pipe, WORKER_CONNECT_ERROR, message,
+		worker_post_message(pipe, WORKER_ERROR, message,
 				"Unsupported protocol");
 		return;
 	}
@@ -59,7 +59,7 @@ void handle_worker_connect(struct worker_pipe *pipe, struct worker_message *mess
 	worker_log(L_DEBUG, "Hostname: %s", uri->hostname);
 	worker_log(L_DEBUG, "Port: %s", uri->port);
 
-	bool res = imap_connect(imap, uri, ssl, handle_imap_ready, pipe);
+	bool res = imap_connect(imap, uri, ssl, handle_imap_ready, message);
 	if (res) {
 		worker_log(L_DEBUG, "Connected to IMAP server");
 		if (ssl) {
@@ -77,7 +77,7 @@ void handle_worker_connect(struct worker_pipe *pipe, struct worker_message *mess
 			imap->mode = RECV_LINE;
 		}
 	} else {
-		worker_post_message(pipe, WORKER_CONNECT_ERROR, message,
+		worker_post_message(pipe, WORKER_ERROR, message,
 				"Error connecting to IMAP server");
 	}
 	imap->uri = uri;
@@ -90,25 +90,28 @@ void handle_worker_cert_okay(struct worker_pipe *pipe, struct worker_message *me
 
 void handle_imap_logged_in(struct imap_connection *imap, void *data,
 		enum imap_status status, const char *args) {
-	struct worker_pipe *pipe = data;
+	struct worker_message *msg = data;
+	struct worker_pipe *pipe = imap->data;
 	if (status == STATUS_OK) {
-		worker_post_message(pipe, WORKER_CONNECT_DONE, NULL, NULL);
+		worker_post_message(pipe, WORKER_DONE, msg, NULL);
 	} else {
-		worker_post_message(pipe, WORKER_CONNECT_ERROR, NULL, args ? strdup(args) : NULL);
+		worker_post_message(pipe, WORKER_ERROR, msg,
+				args ? strdup(args) : NULL);
 	}
 }
 
 void handle_imap_cap(struct imap_connection *imap, void *data,
 		enum imap_status status, const char *args) {
-	struct worker_pipe *pipe = data;
+	struct worker_pipe *pipe = imap->data;
+	struct worker_message *msg = data;
 	if (status != STATUS_OK) {
 		// TODO: Format errors sent to main thread
 		worker_log(L_ERROR, "IMAP error: %s", args);
-		worker_post_message(pipe, WORKER_CONNECT_ERROR, NULL, NULL);
+		worker_post_message(pipe, WORKER_ERROR, msg, "TODO: improve this error message");
 		return;
 	}
 	if (!imap->cap->imap4rev1) {
-		worker_post_message(pipe, WORKER_CONNECT_ERROR, NULL,
+		worker_post_message(pipe, WORKER_ERROR, msg,
 				"IMAP server does not support IMAP4rev1");
 		return;
 	}
@@ -116,7 +119,7 @@ void handle_imap_cap(struct imap_connection *imap, void *data,
 	// Attempt to authenticate
 	if (status == STATUS_PREAUTH) {
 		imap->logged_in = true;
-		worker_post_message(pipe, WORKER_CONNECT_DONE, NULL, NULL);
+		worker_post_message(pipe, WORKER_DONE, msg, NULL);
 	} else if (imap->cap->auth_plain) {
 		if (imap->uri->username && imap->uri->password) {
 			if (imap->cap->sasl_ir) {
@@ -130,7 +133,7 @@ void handle_imap_cap(struct imap_connection *imap, void *data,
 				imap->logged_in = true;
 				size_t _;
 				char *enc = b64_encode(buf, len, &_);
-				imap_send(imap, handle_imap_logged_in, pipe,
+				imap_send(imap, handle_imap_logged_in, msg,
 						"AUTHENTICATE PLAIN %s", enc);
 				free(enc);
 				free(buf);
@@ -140,14 +143,14 @@ void handle_imap_cap(struct imap_connection *imap, void *data,
 	} else if (imap->cap->auth_login) {
 		if (imap->uri->username && imap->uri->password) {
 			imap->logged_in = true;
-			imap_send(imap, handle_imap_logged_in, pipe, "LOGIN \"%s\" \"%s\"",
+			imap_send(imap, handle_imap_logged_in, msg, "LOGIN \"%s\" \"%s\"",
 					imap->uri->username, imap->uri->password);
 			memset(imap->uri->password, 0, strlen(imap->uri->password));
 		}
 	} else if (imap->cap->starttls) {
-		imap_send(imap, imap_starttls_callback, pipe, "STARTTLS");
+		imap_send(imap, imap_starttls_callback, msg, "STARTTLS");
 	} else {
-		worker_post_message(pipe, WORKER_CONNECT_ERROR, NULL,
+		worker_post_message(pipe, WORKER_ERROR, msg,
 				"IMAP server and client do not share any supported "
 				"authentication mechanisms. Did you provide a username/password?");
 	}
@@ -155,23 +158,24 @@ void handle_imap_cap(struct imap_connection *imap, void *data,
 
 void handle_imap_ready(struct imap_connection *imap, void *data,
 		enum imap_status status, const char *args) {
-	struct worker_pipe *pipe = data;
+	struct worker_message *msg = data;
 	if (!imap->cap) {
 		// Often the server will send us these in a status message during the
 		// handshake. Sometimes it won't, though:
-		imap_capability(imap, handle_imap_cap, pipe);
+		imap_capability(imap, handle_imap_cap, msg);
 		return;
 	}
-	handle_imap_cap(imap, pipe, STATUS_OK, NULL);
+	handle_imap_cap(imap, msg, STATUS_OK, NULL);
 }
 
 void imap_starttls_callback(struct imap_connection *imap, void *data,
 		enum imap_status status, const char *args) {
-	struct worker_pipe *pipe = data;
+	struct worker_pipe *pipe = imap->data;
+	struct worker_message *msg = data;
 	if (!ab_enable_ssl(imap->socket)) {
-		worker_post_message(pipe, WORKER_CONNECT_ERROR, NULL, "TLS connection failed.");
+		worker_post_message(pipe, WORKER_ERROR, msg, "TLS connection failed.");
 		return;
 	}
 	imap->socket->use_ssl = true;
-	imap_send(imap, handle_imap_cap, pipe, "CAPABILITY");
+	imap_send(imap, handle_imap_cap, msg, "CAPABILITY");
 }

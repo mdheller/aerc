@@ -136,7 +136,8 @@ void fetch_pending() {
 		range->max++;
 		range->min++;
 		worker_log(L_DEBUG, "Fetching message range %d - %d", range->min, range->max);
-		worker_post_action(account->worker.pipe, WORKER_FETCH_MESSAGES, NULL, range);
+		worker_post_action(account->worker.pipe, WORKER_FETCH_MESSAGES,
+				NULL, range, NULL, NULL);
 		list_del(account->ui.fetch_requests, 0);
 	}
 }

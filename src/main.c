@@ -32,12 +32,14 @@ struct message_handler {
 };
 
 struct message_handler message_handlers[] = {
+	/*
 	{ WORKER_CONNECT_DONE, handle_worker_connect_done },
 	{ WORKER_CONNECT_ERROR, handle_worker_connect_error },
 	{ WORKER_SELECT_MAILBOX_DONE, handle_worker_select_done },
 	{ WORKER_SELECT_MAILBOX_ERROR, handle_worker_select_error },
 	{ WORKER_LIST_DONE, handle_worker_list_done },
 	{ WORKER_LIST_ERROR, handle_worker_list_error },
+	*/
 #ifdef USE_OPENSSL
 	{ WORKER_CONNECT_CERT_CHECK, handle_worker_connect_cert_check },
 #endif
@@ -112,10 +114,10 @@ int main(int argc, char **argv) {
 		account->worker.pipe = worker_pipe_new();
 		account->ui.fetch_requests = create_list();
 		account->config = ac;
-		worker_post_action(account->worker.pipe, WORKER_CONNECT, NULL,
-				ac->source);
 		worker_post_action(account->worker.pipe, WORKER_CONFIGURE, NULL,
-				ac->extras);
+				ac->extras, NULL, NULL);
+		worker_post_action(account->worker.pipe, WORKER_CONNECT, NULL,
+				ac->source, NULL, NULL);
 		// TODO: Detect appropriate worker based on source
 		pthread_create(&account->worker.thread, NULL, imap_worker,
 				account->worker.pipe);

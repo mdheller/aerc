@@ -154,7 +154,7 @@ void *imap_worker(void *_pipe) {
 	while (1) {
 		bool sleep = true;
 		if (worker_get_action(pipe, &message)) {
-			if (message->type == WORKER_END) {
+			if (message->type == WORKER_SHUTDOWN) {
 				imap_close(imap);
 				free(imap);
 				worker_message_free(message);

@@ -156,7 +156,7 @@ static void handle_next_folder(int argc, char **argv) {
 		}
 	}
 	worker_post_action(account->worker.pipe, WORKER_SELECT_MAILBOX,
-			NULL, strdup(next->name));
+			NULL, strdup(next->name), NULL, NULL);
 	request_rerender(PANEL_SIDEBAR | PANEL_MESSAGE_LIST);
 }
 
@@ -194,7 +194,7 @@ static void handle_previous_folder(int argc, char **argv) {
 		}
 	}
 	worker_post_action(account->worker.pipe, WORKER_SELECT_MAILBOX,
-			NULL, strdup(next->name));
+			NULL, strdup(next->name), NULL, NULL);
 	request_rerender(PANEL_SIDEBAR | PANEL_MESSAGE_LIST);
 }
 
@@ -204,7 +204,7 @@ static void handle_cd(int argc, char **argv) {
 	close_message(account);
 	char *joined = join_args(argv, argc);
 	worker_post_action(account->worker.pipe, WORKER_SELECT_MAILBOX,
-			NULL, joined);
+			NULL, joined, NULL, NULL);
 	request_rerender(PANEL_SIDEBAR | PANEL_MESSAGE_LIST);
 }
 
@@ -213,7 +213,7 @@ static void handle_delete_mailbox(int argc, char **argv) {
 		state->accounts->items[state->selected_account];
 	char *joined = join_args(argv, argc);
 	worker_post_action(account->worker.pipe, WORKER_DELETE_MAILBOX,
-			NULL, strdup(joined));
+			NULL, strdup(joined), NULL, NULL);
 	free(joined);
 	request_rerender(PANEL_SIDEBAR | PANEL_MESSAGE_LIST);
 }
@@ -223,7 +223,7 @@ static void handle_create_mailbox(int argc, char **argv) {
 		state->accounts->items[state->selected_account];
 	char *joined = join_args(argv, argc);
 	worker_post_action(account->worker.pipe, WORKER_CREATE_MAILBOX,
-			NULL, strdup(joined));
+			NULL, strdup(joined), NULL, NULL);
 	free(joined);
 	request_rerender(PANEL_SIDEBAR | PANEL_MESSAGE_LIST);
 }
@@ -337,7 +337,8 @@ static void handle_delete_message(int argc, char **argv) {
 	requested = mbox->messages->length - requested - 1;
 	size_t *req = malloc(sizeof(size_t));
 	memcpy(req, &requested, sizeof(size_t));
-	worker_post_action(account->worker.pipe, WORKER_DELETE_MESSAGE, NULL, req);
+	worker_post_action(account->worker.pipe, WORKER_DELETE_MESSAGE,
+			NULL, req, NULL, NULL);
 	handle_command("next-message");
 	request_rerender(PANEL_MESSAGE_LIST);
 }
@@ -363,7 +364,8 @@ static void handle_copy_message(int argc, char **argv) {
 	req->index = requested;
 	req->destination = join_args(argv, argc);
 	set_status(account, ACCOUNT_OKAY, "Copying message to %s", req->destination);
-	worker_post_action(account->worker.pipe, WORKER_COPY_MESSAGE, NULL, req);
+	worker_post_action(account->worker.pipe, WORKER_COPY_MESSAGE,
+			NULL, req, NULL, NULL);
 	request_rerender(PANEL_MESSAGE_LIST);
 }
 
@@ -388,7 +390,8 @@ static void handle_move_message(int argc, char **argv) {
 	req->index = requested;
 	req->destination = join_args(argv, argc);
 	set_status(account, ACCOUNT_OKAY, "Moving message to %s", req->destination);
-	worker_post_action(account->worker.pipe, WORKER_MOVE_MESSAGE, NULL, req);
+	worker_post_action(account->worker.pipe, WORKER_MOVE_MESSAGE,
+			NULL, req, NULL, NULL);
 	handle_command("next-message");
 	request_rerender(PANEL_MESSAGE_LIST);
 }
