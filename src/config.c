@@ -95,7 +95,7 @@ static bool parse_mime(struct mimetype *mime, const char *key) {
 		return false;
 	}
 	int i = _ - key + 1;
-	mime->type = malloc(i);
+	mime->type = malloc(i + 1);
 	strncpy(mime->type, key, _ - key);
 	mime->type[i] = '\0';
 	mime->subtype = strdup(&key[i]);
