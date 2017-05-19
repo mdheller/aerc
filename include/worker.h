@@ -23,11 +23,11 @@ enum worker_message_type {
 	 * main -> worker: WORKER_*
 	 * main <- worker: WORKER_ACK | WORKER_UNSUPPORTED
 	 * [worker does task]
-	 * main <- worker: WORKER_DONE | WORKER_ERROR
+	 * main <- worker: WORKER_OKAY | WORKER_ERROR
 	 * [main thread runs callbacks]
 	 */
 	WORKER_ACK,
-	WORKER_DONE,
+	WORKER_OKAY,
 	WORKER_ERROR,
 	WORKER_SHUTDOWN,
 	WORKER_UNSUPPORTED,
@@ -64,7 +64,9 @@ struct worker_pipe {
 	/* Messages from worker->master */
 	aqueue_t *messages;
 	/* Arbitrary worker-specific data */
-	void *data;
+	void *data; // TODO: rename to slave
+	/* Arbitrary master-specific data */
+	void *master;
 };
 
 struct worker_message {

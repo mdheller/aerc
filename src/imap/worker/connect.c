@@ -71,7 +71,7 @@ void handle_worker_connect(struct worker_pipe *pipe, struct worker_message *mess
 			struct cert_check_message *ccm = calloc(1,
 					sizeof(struct cert_check_message));
 			ccm->cert = imap->socket->cert;
-			worker_post_message(pipe, WORKER_CONNECT_CERT_CHECK, message, ccm);
+			worker_post_message(pipe, WORKER_CONNECT_CERT_CHECK, NULL, ccm);
 #endif
 		} else {
 			imap->mode = RECV_LINE;
@@ -93,7 +93,7 @@ void handle_imap_logged_in(struct imap_connection *imap, void *data,
 	struct worker_message *msg = data;
 	struct worker_pipe *pipe = imap->data;
 	if (status == STATUS_OK) {
-		worker_post_message(pipe, WORKER_DONE, msg, NULL);
+		worker_post_message(pipe, WORKER_OKAY, msg, NULL);
 	} else {
 		worker_post_message(pipe, WORKER_ERROR, msg,
 				args ? strdup(args) : NULL);
@@ -119,7 +119,7 @@ void handle_imap_cap(struct imap_connection *imap, void *data,
 	// Attempt to authenticate
 	if (status == STATUS_PREAUTH) {
 		imap->logged_in = true;
-		worker_post_message(pipe, WORKER_DONE, msg, NULL);
+		worker_post_message(pipe, WORKER_OKAY, msg, NULL);
 	} else if (imap->cap->auth_plain) {
 		if (imap->uri->username && imap->uri->password) {
 			if (imap->cap->sasl_ir) {

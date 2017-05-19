@@ -10,7 +10,7 @@
 #include "worker.h"
 
 static unsigned int hash_ptr(const void *ptr) {
-	return (unsigned int)(uintptr_t)ptr;
+	return (unsigned int)((uintptr_t)ptr * 2654435761);
 }
 
 struct worker_pipe *worker_pipe_new() {
@@ -47,13 +47,14 @@ static bool _worker_get(aqueue_t *queue,
 bool worker_get_message(struct worker_pipe *pipe,
 		struct worker_message **message) {
 	if (_worker_get(pipe->messages, message)) {
-		if ((*message)->in_response_to) {
-			struct worker_task *task = hashtable_get(pipe->callbacks,
+		if ((*message)->in_response_to &&
+				((*message)->type == WORKER_OKAY || (*message)->type == WORKER_ERROR)) {
+			struct worker_task *task = hashtable_del(pipe->callbacks,
 					(*message)->in_response_to);
 			if (task && task->callback) {
 				task->callback(pipe, task->data, *message);
+				free(task);
 			}
-			free(task);
 		}
 		return true;
 	}

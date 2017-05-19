@@ -204,7 +204,7 @@ static void handle_cd(int argc, char **argv) {
 	close_message(account);
 	char *joined = join_args(argv, argc);
 	worker_post_action(account->worker.pipe, WORKER_SELECT_MAILBOX,
-			NULL, joined, NULL, NULL);
+			NULL, joined, worker_select_complete, NULL);
 	request_rerender(PANEL_SIDEBAR | PANEL_MESSAGE_LIST);
 }
 

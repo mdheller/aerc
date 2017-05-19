@@ -13,8 +13,4 @@ void handle_worker_create_mailbox(struct worker_pipe *pipe, struct worker_messag
 	worker_post_message(pipe, WORKER_ACK, message, NULL);
 	imap_create(imap, NULL, NULL, (const char *)message->data);
 	// TODO: Bubble errors/success up to main thread
-	// Would be nice to have a generic transactional flow between threads
-	// WORKER_* -> WORKER_ACK -> [process] -> WORKER_{DONE,ERROR}
-	// With the original error attached and a hashtable of functions for
-	// handling the result (similar to how the IMAP code works)
 }

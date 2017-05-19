@@ -20,33 +20,27 @@
 #include "subprocess.h"
 #include "commands.h"
 
-void handle_worker_connect_done(struct account_state *account,
-		struct worker_message *message) {
-	worker_post_action(account->worker.pipe, WORKER_LIST, NULL, NULL, NULL, NULL);
-	set_status(account, ACCOUNT_OKAY, "Connected.");
-}
-
-void handle_worker_connect_error(struct account_state *account,
-		struct worker_message *message) {
-	set_status(account, ACCOUNT_ERROR, (char *)message->data);
-}
-
-void handle_worker_select_done(struct account_state *account,
-		struct worker_message *message) {
+void worker_select_complete(struct worker_pipe *pipe, void *data,
+		struct worker_message *result) {
+	struct account_state *account = pipe->master;
+	if (result->type != WORKER_OKAY) {
+		set_status(account, ACCOUNT_ERROR, "Unable to select that mailbox.");
+		return;
+	}
 	set_status(account, ACCOUNT_OKAY, "Connected.");
 	account->ui.list_offset = 0;
-	account->selected = strdup((char *)message->data);
+	account->selected = strdup((char *)result->data);
 	request_rerender(PANEL_MESSAGE_LIST);
 }
 
-void handle_worker_select_error(struct account_state *account,
-		struct worker_message *message) {
-	set_status(account, ACCOUNT_ERROR, "Unable to select that mailbox.");
-}
-
-void handle_worker_list_done(struct account_state *account,
-		struct worker_message *message) {
-	account->mailboxes = message->data;
+static void worker_list_complete(struct worker_pipe *pipe, void *data,
+		struct worker_message *result) {
+	struct account_state *account = pipe->master;
+	if (result->type != WORKER_OKAY) {
+		set_status(account, ACCOUNT_ERROR, "Unable to list folders!");
+		return;
+	}
+	account->mailboxes = result->data;
 	char *wanted = "INBOX";
 	struct account_config *c = config_for_account(account->name);
 	for (size_t i = 0; i < c->extras->length; ++i) {
@@ -72,9 +66,16 @@ void handle_worker_list_done(struct account_state *account,
 	request_rerender(PANEL_MESSAGE_LIST | PANEL_SIDEBAR);
 }
 
-void handle_worker_list_error(struct account_state *account,
-		struct worker_message *message) {
-	set_status(account, ACCOUNT_ERROR, "Unable to list folders!");
+void worker_connected(struct worker_pipe *pipe, void *data,
+		struct worker_message *result) {
+	struct account_state *account = pipe->master;
+	if (result->type == WORKER_OKAY) {
+		worker_post_action(pipe, WORKER_LIST, NULL, NULL,
+				worker_list_complete, NULL);
+		set_status(account, ACCOUNT_OKAY, "Connected.");
+	} else {
+		set_status(account, ACCOUNT_ERROR, (char *)result->data);
+	}
 }
 
 void handle_worker_connect_cert_check(struct account_state *account,

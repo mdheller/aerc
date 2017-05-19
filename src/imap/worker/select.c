@@ -15,7 +15,7 @@ static void select_done(struct imap_connection *imap,
 	struct worker_pipe *pipe = imap->data;
 	if (status == STATUS_OK) {
 		worker_log(L_DEBUG, "Selected %s", imap->selected);
-		worker_post_message(pipe, WORKER_DONE, msg, imap->selected);
+		worker_post_message(pipe, WORKER_OKAY, msg, imap->selected);
 	} else {
 		// TODO: Include a more descriptive error message?
 		worker_post_message(pipe, WORKER_ERROR, msg, NULL);

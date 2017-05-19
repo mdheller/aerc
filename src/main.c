@@ -31,15 +31,12 @@ struct message_handler {
 	void (*handler)(struct account_state *account, struct worker_message *message);
 };
 
+struct response_handler {
+	enum worker_message_type action;
+	worker_callback_t handler;
+};
+
 struct message_handler message_handlers[] = {
-	/*
-	{ WORKER_CONNECT_DONE, handle_worker_connect_done },
-	{ WORKER_CONNECT_ERROR, handle_worker_connect_error },
-	{ WORKER_SELECT_MAILBOX_DONE, handle_worker_select_done },
-	{ WORKER_SELECT_MAILBOX_ERROR, handle_worker_select_error },
-	{ WORKER_LIST_DONE, handle_worker_list_done },
-	{ WORKER_LIST_ERROR, handle_worker_list_error },
-	*/
 #ifdef USE_OPENSSL
 	{ WORKER_CONNECT_CERT_CHECK, handle_worker_connect_cert_check },
 #endif
@@ -49,13 +46,27 @@ struct message_handler message_handlers[] = {
 	{ WORKER_MESSAGE_DELETED, handle_worker_message_deleted },
 };
 
+struct response_handler response_handlers[] = {
+	{ WORKER_SELECT_MAILBOX, worker_select_complete },
+};
+
 void handle_worker_message(struct account_state *account, struct worker_message *msg) {
 	for (size_t i = 0;
-			i < sizeof(message_handlers) / sizeof(struct message_handler);
-			++i) {
+			i < sizeof(message_handlers) / sizeof(message_handlers[0]); ++i) {
 		struct message_handler handler = message_handlers[i];
 		if (handler.action == msg->type) {
 			handler.handler(account, msg);
+			break;
+		}
+	}
+	if (!msg->in_response_to) {
+		return;
+	}
+	for (size_t i = 0;
+			i < sizeof(response_handlers) / sizeof(response_handlers[0]); ++i) {
+		struct response_handler handler = response_handlers[i];
+		if (handler.action == msg->in_response_to->type) {
+			handler.handler(account->worker.pipe, NULL, msg);
 			break;
 		}
 	}
@@ -112,12 +123,13 @@ int main(int argc, char **argv) {
 		struct account_state *account = calloc(1, sizeof(struct account_state));
 		account->name = strdup(ac->name);
 		account->worker.pipe = worker_pipe_new();
+		account->worker.pipe->master = account;
 		account->ui.fetch_requests = create_list();
 		account->config = ac;
 		worker_post_action(account->worker.pipe, WORKER_CONFIGURE, NULL,
 				ac->extras, NULL, NULL);
 		worker_post_action(account->worker.pipe, WORKER_CONNECT, NULL,
-				ac->source, NULL, NULL);
+				ac->source, worker_connected, NULL);
 		// TODO: Detect appropriate worker based on source
 		pthread_create(&account->worker.thread, NULL, imap_worker,
 				account->worker.pipe);
