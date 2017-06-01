@@ -106,7 +106,13 @@ void handle_worker_mailbox_updated(struct account_state *account,
 	char buf[64];
 	sprintf(buf, "select-message %ld", new->exists - old->exists);
 	handle_command(buf);
+	int diff = new->exists - old->exists;
 	free_aerc_mailbox(old);
+	if (diff > 0) {
+		set_status(account, ACCOUNT_OKAY, "New email in this mailbox");
+		char bell = '\a';
+		write(STDOUT_FILENO, &bell, 1);
+	}
 	request_rerender(PANEL_MESSAGE_LIST | PANEL_SIDEBAR);
 }
 
