@@ -26,7 +26,7 @@ void imap_store(struct imap_connection *imap, imap_callback_t callback,
 		imap_send(imap, callback, data, "STORE %d %s (%s)",
 				min + 1, _mode, flags);
 	} else {
-		imap_send(imap, callback, data, "FETCH %d:%d %s (%s)",
+		imap_send(imap, callback, data, "STORE %d:%d %s (%s)",
 				min + 1, max + 1, _mode, flags);
 	}
 }
