@@ -111,7 +111,13 @@ void handle_worker_mailbox_updated(struct account_state *account,
 	if (diff > 0) {
 		set_status(account, ACCOUNT_OKAY, "New email in this mailbox");
 		char bell = '\a';
-		(void)write(STDOUT_FILENO, &bell, 1);
+		int w = write(STDOUT_FILENO, &bell, 1);
+		// Fuck you gcc/glibc for making me handle this
+		if (w != 1) {
+			worker_log(L_ERROR, "gcc and glibc think that it's _extremely_"
+					" important for you to know that we weren't able to make"
+					" your terminal beep.");
+		}
 	}
 	request_rerender(PANEL_MESSAGE_LIST | PANEL_SIDEBAR);
 }
