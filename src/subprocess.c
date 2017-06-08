@@ -34,7 +34,10 @@ static void subprocess_pty_log(void *data, const char *file, int line,
 static void subprocess_pty_write(struct tsm_vte *vte, const char *u8,
 		size_t len, void *data) {
 	struct subprocess *subp = data;
-	write(subp->pty->fd, u8, len);
+	if (write(subp->pty->fd, u8, len) != (int)len) {
+		// I don't fucking care fuck you gcc fuck you glibc god dammit you cunts
+		// get off my fucking back
+	}
 	request_rerender(PANEL_MESSAGE_VIEW);
 }
 
