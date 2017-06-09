@@ -313,10 +313,16 @@ void handle_imap_fetch(struct imap_connection *imap, const char *token,
 	}
 	msg->fetching = false;
 
-	msg->populated = true;
-	for (size_t i = 0; i < sizeof(handled) / sizeof(handled[0]); ++i) {
-		worker_log(L_DEBUG, "%s was %shandled", handlers[i].name, handled[i] ? "" : "not ");
-		msg->populated &= handled[i];
+	// A partial FETCH message for an unpopulated message doesn't populate it
+	// but it doesn't depopulate an already populated message -- e.g. fetching
+	// the BODY of a message
+	if (!msg->populated) {
+		msg->populated = true;
+		for (size_t i = 0; i < sizeof(handled) / sizeof(handled[0]); ++i) {
+			worker_log(L_DEBUG, "%s was %shandled", handlers[i].name,
+				   handled[i] ? "" : "not ");
+			msg->populated &= handled[i];
+		}
 	}
 
 	if (imap->events.message_updated) {
