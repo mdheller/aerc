@@ -163,7 +163,6 @@ void handle_worker_message_updated(struct account_state *account,
 		struct aerc_message *old = mbox->messages->items[i];
 		if (old->index == new->index) {
 			free_aerc_message(mbox->messages->items[i]);
-			new->fetched = true;
 			mbox->messages->items[i] = new;
 			rerender_item(i);
 			if (account->viewer.msg == old) {
