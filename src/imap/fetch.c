@@ -291,6 +291,7 @@ void handle_imap_fetch(struct imap_connection *imap, const char *token,
 		{ "BODY", IMAP_RESPONSE, handle_body },
 		{ "BODYSTRUCTURE", IMAP_LIST, handle_bodystructure },
 	};
+	bool handled[sizeof(handlers) / sizeof(handlers[0])] = { false };
 
 	while (args) {
 		const char *name = args->str;
@@ -302,6 +303,7 @@ void handle_imap_fetch(struct imap_connection *imap, const char *token,
 			if (strcmp(handlers[i].name, name) == 0) {
 				assert(args->type == handlers[i].expected_type);
 				int j = handlers[i].handler(msg, args);
+				handled[i] = true;
 				while (j-- && args) args = args->next;
 			}
 		}
@@ -310,7 +312,13 @@ void handle_imap_fetch(struct imap_connection *imap, const char *token,
 		}
 	}
 	msg->fetching = false;
+
 	msg->populated = true;
+	for (size_t i = 0; i < sizeof(handled) / sizeof(handled[0]); ++i) {
+		worker_log(L_DEBUG, "%s was %shandled", handlers[i].name, handled[i] ? "" : "not ");
+		msg->populated &= handled[i];
+	}
+
 	if (imap->events.message_updated) {
 		imap->events.message_updated(imap, msg);
 	}
