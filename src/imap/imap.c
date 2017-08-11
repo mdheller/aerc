@@ -27,7 +27,9 @@
 bool inited = false;
 hashtable_t *internal_handlers = NULL;
 
+#ifndef NDEBUG
 FILE *raw;
+#endif
 
 typedef void (*imap_handler_t)(struct imap_connection *imap,
 	const char *token, const char *cmd, imap_arg_t *args);
@@ -86,10 +88,12 @@ void imap_send(struct imap_connection *imap, imap_callback_t callback,
 		imap->mode = RECV_LINE;
 		char *done = "DONE\r\n";
 		ab_send(imap->socket, done, strlen(done));
+#ifndef NDEBUG
 		if (raw) {
 			fwrite(done, 1, strlen(done), raw);
 			fflush(raw);
 		}
+#endif
 	}
 
 	va_list args;
@@ -111,10 +115,12 @@ void imap_send(struct imap_connection *imap, imap_callback_t callback,
 	snprintf(cmd, len + 1, "%s %s\r\n", tag, buf);
 
 	ab_send(imap->socket, cmd, len);
+#ifndef NDEBUG
 	if (raw) {
 		fwrite(cmd, 1, len, raw);
 		fflush(raw);
 	}
+#endif
 	hashtable_set(imap->pending, tag, make_callback(callback, data));
 
 	if (strncmp("LOGIN ", buf, 6) == 0) {
@@ -161,10 +167,12 @@ int imap_receive(struct imap_connection *imap) {
 					char c = imap->line[len];
 					imap->line[len] = '\0';
 					worker_log(L_DEBUG, "Handling %s", imap->line);
+#ifndef NDEBUG
 					if (raw) {
 						fwrite(imap->line, 1, len, raw);
 						fflush(raw);
 					}
+#endif
 					imap->line[len] = c;
 
 					handle_line(imap, arg);
@@ -248,7 +256,9 @@ void imap_close(struct imap_connection *imap) {
 
 bool imap_connect(struct imap_connection *imap, const struct uri *uri,
 		bool use_ssl, imap_callback_t callback, void *data) {
+#ifndef NDEBUG
 	raw = fopen("raw.log", "w"); // temp, todo figure out a permenant solution
+#endif
 	imap_init(imap);
 	imap->socket = absocket_new(uri, use_ssl);
 	if (!imap->socket) {
