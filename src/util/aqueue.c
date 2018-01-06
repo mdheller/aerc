@@ -29,7 +29,8 @@ aqueue_t *aqueue_new() {
 		return NULL;
 	}
 	q->first = dummy;
-	q->head = q->tail = (atomic_intptr_t)dummy;
+	atomic_init(&q->head, (intptr_t)dummy);
+	atomic_init(&q->tail, (intptr_t)dummy);
 	return q;
 }
 
@@ -49,11 +50,11 @@ bool aqueue_enqueue(aqueue_t *q, void *val) {
 	}
 	node->value = val;
 
-	aqueue_node_t *tail = (aqueue_node_t*)q->tail;
+	aqueue_node_t *tail = (aqueue_node_t*)atomic_load(&q->tail);
 	tail->next = node;
-	q->tail = (atomic_intptr_t)node;
+	atomic_store(&q->tail, (intptr_t)node);
 
-	while ((intptr_t)q->first != q->head) {
+	while ((intptr_t)q->first != (intptr_t)atomic_load(&q->head)) {
 		aqueue_node_t *n = q->first;
 		q->first = n->next;
 		free(n);
@@ -62,10 +63,10 @@ bool aqueue_enqueue(aqueue_t *q, void *val) {
 }
 
 bool aqueue_dequeue(aqueue_t *q, void **val) {
-	if (q->head != q->tail) {
-		aqueue_node_t *node = (aqueue_node_t *)q->head;
+	if (atomic_load(&q->head) != atomic_load(&q->tail)) {
+		aqueue_node_t *node = (aqueue_node_t *)atomic_load(&q->head);
 		*val = node->next->value;
-		q->head = (atomic_intptr_t)node->next;
+		atomic_store(&q->head, (intptr_t)node->next);
 		return true;
 	}
 	return false;
