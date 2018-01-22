@@ -144,8 +144,10 @@ void handle_imap_cap(struct imap_connection *imap, void *data,
 					imap->uri->username, imap->uri->password);
 			memset(imap->uri->password, 0, strlen(imap->uri->password));
 		}
+#ifdef USE_OPENSSL
 	} else if (imap->cap->starttls) {
 		imap_send(imap, imap_starttls_callback, pipe, "STARTTLS");
+#endif
 	} else {
 		worker_post_message(pipe, WORKER_CONNECT_ERROR, NULL,
 				"IMAP server and client do not share any supported "
@@ -165,6 +167,8 @@ void handle_imap_ready(struct imap_connection *imap, void *data,
 	handle_imap_cap(imap, pipe, STATUS_OK, NULL);
 }
 
+#ifdef USE_OPENSSL
+
 void imap_starttls_callback(struct imap_connection *imap, void *data,
 		enum imap_status status, const char *args) {
 	struct worker_pipe *pipe = data;
@@ -175,3 +179,5 @@ void imap_starttls_callback(struct imap_connection *imap, void *data,
 	imap->socket->use_ssl = true;
 	imap_send(imap, handle_imap_cap, pipe, "CAPABILITY");
 }
+
+#endif
