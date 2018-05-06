@@ -1,6 +1,6 @@
 # aerc
 
-aerc is a **work in progress** asyncronous email client for your terminal. aerc
+aerc is a **work in progress** asynchronous email client for your terminal. aerc
 is network-first, and is designed with network-based email protocols in mind. It
 runs all network code in separate worker threads that don't lock up the UI.
 Compared to mutt, it's also easier on the network and much faster - it only
