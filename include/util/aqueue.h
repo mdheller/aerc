@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-/* Lock-free single-producer/single-consumer asyncronous queue */
+/* Lock-free single-producer/single-consumer asynchronous queue */
 
 typedef struct aqueue aqueue_t;
 
