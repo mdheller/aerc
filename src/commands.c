@@ -267,6 +267,10 @@ static void handle_view_message(int argc, char **argv) {
 		set_status(account, ACCOUNT_ERROR, "Failed to read mailbox");
 		return;
 	}
+	if (!mbox->messages->length) {
+		set_status(account, ACCOUNT_ERROR, "Failed to read empty message");
+		return;
+	}
 	account->viewer.msg = mbox->messages->items[
 		mbox->messages->length - account->ui.selected_message - 1];
 	load_message_viewer(account);
