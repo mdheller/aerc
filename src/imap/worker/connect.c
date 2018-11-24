@@ -52,6 +52,12 @@ void handle_worker_connect(struct worker_pipe *pipe, struct worker_message *mess
 		uri->port = strdup(ssl ? "993" : "143");
 	}
 
+	if (!uri->password) {
+		worker_post_message(pipe, WORKER_CONNECT_ERROR, message,
+			"Failed to parse password");
+		return;
+	}
+
 	worker_log(L_DEBUG, "Connecting to IMAP server:");
 	worker_log(L_DEBUG, "Protocol: %s%s", uri->scheme, ssl ? " (ssl)" : "");
 	worker_log(L_DEBUG, "Username: %s", uri->username);
