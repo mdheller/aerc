@@ -243,7 +243,7 @@ void render_items(struct geometry geo) {
 		add_loading(geo);
 		return;
 	}
-	
+
 	if (account->selected && mailbox->messages->length == 0) {
 		geo.x += geo.width / 2 - strlen(config->ui.empty_message) / 2;
 		get_color("message-list-empty", &cell);
@@ -255,6 +255,9 @@ void render_items(struct geometry geo) {
 	for (int i = mailbox->messages->length - account->ui.list_offset - 1;
 			i >= 0 && geo.y < limit;
 			--i, ++geo.y) {
+		if ((size_t)i >= mailbox->messages->length) {
+			continue;
+		}
 		struct aerc_message *message = mailbox->messages->items[i];
 		const char *subject = get_message_header(message, "Subject");
 		worker_log(L_DEBUG, "Rendering message %d of %zd at %d (offs %zd) [%s]",
