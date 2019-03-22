@@ -1,3 +1,11 @@
+**NOTICE**
+
+This repository is abandoned in favor of ongoing development on
+[git.sr.ht](https://git.sr.ht/~sircmpwn/aerc2). The codebase has been rewritten
+in Go and is much more stable and useful than what you see here.
+
+---
+
 # aerc
 
 aerc is a **work in progress** asynchronous email client for your terminal. aerc
